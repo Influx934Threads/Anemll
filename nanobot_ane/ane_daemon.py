@@ -415,6 +415,10 @@ class ANEDaemon:
                     if curr_max_pos > prev_max_pos:
                         self.logger.info(f"Polling: new messages in {chat_id[:16]}... ({prev_max_pos} -> {curr_max_pos})")
                         await self._fetch_and_process_messages(chat_id)
+                    elif prev_max_pos > 0 and curr_max_pos < prev_max_pos:
+                        # Database was compacted - reset our tracking
+                        self.logger.info(f"Polling: DB compacted for {chat_id[:16]}... (was {prev_max_pos}, now {curr_max_pos})")
+                        self.ane_service.reset_session_position(chat_id, curr_max_pos)
 
             except asyncio.CancelledError:
                 break

@@ -489,3 +489,9 @@ Compressed:"""
     def set_session_position(self, session_key: str, position: int):
         """Set last processed position for a session."""
         self._session_positions[session_key] = position
+
+    def reset_session_position(self, session_key: str, new_position: int):
+        """Reset session position after database compaction."""
+        old_pos = self._session_positions.get(session_key, -1)
+        self._session_positions[session_key] = new_position
+        logger.info(f"Reset session {session_key[:16]}... position: {old_pos} -> {new_position}")
