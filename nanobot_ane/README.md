@@ -95,6 +95,40 @@ curl http://127.0.0.1:8766/metrics
 curl http://127.0.0.1:8766/context/<session-id>
 ```
 
+## Running as a Launch Service (macOS)
+
+To run the daemon automatically on boot, install the launchd plist:
+
+```bash
+# Stop current daemon first
+./nanobot_ane/anectl stop
+
+# Install the launch agent
+cp ~/Build/Anemll/nanobot_ane/com.anemll.ane-daemon.plist ~/Library/LaunchAgents/
+
+# Load it (starts immediately and on every boot)
+launchctl load ~/Library/LaunchAgents/com.anemll.ane-daemon.plist
+```
+
+**Management commands:**
+```bash
+# Stop
+launchctl stop com.anemll.ane-daemon
+
+# Start
+launchctl start com.anemll.ane-daemon
+
+# Unload (disable from boot)
+launchctl unload ~/Library/LaunchAgents/com.anemll.ane-daemon.plist
+
+# Check status
+launchctl list | grep anemll
+```
+
+The service has `KeepAlive` enabled so it auto-restarts if it crashes.
+
+**Note:** Edit the plist if your paths differ from the defaults.
+
 ## Configuration
 
 The daemon uses these defaults (configurable via command line):

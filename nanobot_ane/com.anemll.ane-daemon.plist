@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.anemll.ane-daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/agundez/Build/Anemll/env-anemll/bin/python</string>
+        <string>/Users/agundez/Build/Anemll/nanobot_ane/ane_daemon.py</string>
+        <string>--model</string>
+        <string>/Users/agundez/Build/Anemll/models/qwen3-1.7b-ctx2048</string>
+        <string>--ws-url</string>
+        <string>ws://127.0.0.1:8765</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/agundez/Build/Anemll</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/agundez/.nanobot/logs/ane_daemon_stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/agundez/.nanobot/logs/ane_daemon_stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>
