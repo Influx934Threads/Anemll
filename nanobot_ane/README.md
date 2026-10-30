@@ -162,9 +162,68 @@ The daemon integrates with nanobot via a patched `RuntimeContextProvider`:
 3. Serves compressed context via HTTP at `http://127.0.0.1:8766/context/<session-id>`
 4. Nanobot's gateway fetches context before each inference
 
-To enable injection, apply the gateway patch:
+### Applying the Nanobot Patch
+
+The context injection requires patching `gateway_runtime.py` in the nanobot package.
+
 ```bash
-python nanobot_ane/nanobot_ane_patch.py
+# Check current status
+python nanobot_ane/nanobot_ane_patch.py --status
+
+# Apply the patch (creates backup automatically)
+python nanobot_ane/nanobot_ane_patch.py --apply
+
+# Revert if needed
+python nanobot_ane/nanobot_ane_patch.py --revert
+
+# Preview changes without applying
+python nanobot_ane/nanobot_ane_patch.py --apply --dry-run
+```
+
+**What the patch does:**
+- Adds `_ane_context_provider()` function to `gateway_runtime.py`
+- Registers it to fetch compressed context from `http://127.0.0.1:8766/context/{session_id}`
+- Injects compressed history into the prompt before each inference
+
+### After Nanobot Upgrades
+
+The patch modifies the installed nanobot package, so it will be **lost on upgrade**.
+
+After upgrading nanobot (`pip install --upgrade nanobot`):
+```bash
+# Re-apply the patch
+python nanobot_ane/nanobot_ane_patch.py --apply
+
+# Restart gateway
+launchctl kickstart -k gui/$(id -u)/com.nanobot.gateway
+```
+
+A backup is created at `gateway_runtime.py.bak` when applying.
+
+### Log Verbosity (Optional)
+
+To reduce nanobot gateway log verbosity, set `LOGURU_LEVEL` environment variable:
+
+| Level | What you'll see |
+|-------|-----------------|
+| `CRITICAL` | Only critical errors |
+| `ERROR` | Errors and critical |
+| `WARNING` | Warnings and above (recommended for quieter logs) |
+| `INFO` | Default - tool calls, turn completions |
+| `DEBUG` | Maximum verbosity |
+
+**In shell:**
+```bash
+export LOGURU_LEVEL=WARNING
+```
+
+**In launchd plist** (`~/Library/LaunchAgents/com.nanobot.gateway.plist`):
+```xml
+<key>EnvironmentVariables</key>
+<dict>
+    <key>LOGURU_LEVEL</key>
+    <string>WARNING</string>
+</dict>
 ```
 
 ## Session File Format
