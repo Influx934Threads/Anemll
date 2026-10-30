@@ -110,6 +110,9 @@ class ANEDaemon:
         # Start HTTP context server
         await self._start_http_server()
 
+        # Start session polling task (checks all sessions periodically)
+        self._poll_task = asyncio.create_task(self._poll_all_sessions())
+
         # Connect to nanobot WebSocket
         await self._connect_loop()
 
@@ -117,6 +120,14 @@ class ANEDaemon:
         """Stop the daemon."""
         self.logger.info("Stopping ANE Daemon...")
         self._running = False
+
+        # Cancel polling task
+        if hasattr(self, '_poll_task') and self._poll_task:
+            self._poll_task.cancel()
+            try:
+                await self._poll_task
+            except asyncio.CancelledError:
+                pass
 
         if self.ws_connection:
             await self.ws_connection.close()
@@ -326,7 +337,7 @@ class ANEDaemon:
             self.logger.debug(f"Chat {chat_id[:8]}...: {len(messages)} user/assistant messages")
 
             # Feed messages to handler for turn detection
-            session = self.ws_handler.get_session(chat_id)
+            session = self.ws_handler.get_or_create_session(chat_id)
             if session:
                 # Sync ws_handler state with service's persisted state
                 service_stats = self.ane_service.get_session_stats(chat_id)
@@ -371,6 +382,46 @@ class ANEDaemon:
             f"Compressed tool result for {session_key}: "
             f"{len(result)} -> {len(compressed)} chars"
         )
+
+    async def _poll_all_sessions(self):
+        """Periodically poll all active sessions for new messages."""
+        poll_interval = 10  # seconds
+        self.logger.info(f"Session polling started (every {poll_interval}s)")
+
+        while self._running:
+            try:
+                await asyncio.sleep(poll_interval)
+                if not self._running:
+                    break
+
+                # Get all active sessions from database (run in thread pool)
+                loop = asyncio.get_event_loop()
+                sessions = await loop.run_in_executor(
+                    None,
+                    lambda: self.session_db.get_active_sessions_with_positions(limit=10)
+                )
+
+                if not sessions:
+                    self.logger.debug("No active sessions found in database")
+                    continue
+
+                for sess in sessions:
+                    chat_id = sess['chat_id']
+                    curr_max_pos = sess['max_pos']
+
+                    # Check against our tracked position
+                    prev_max_pos = self.ane_service.get_session_position(chat_id)
+
+                    if curr_max_pos > prev_max_pos:
+                        self.logger.info(f"Polling: new messages in {chat_id[:16]}... ({prev_max_pos} -> {curr_max_pos})")
+                        await self._fetch_and_process_messages(chat_id)
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.error(f"Polling error: {e}")
+
+        self.logger.info("Session polling stopped")
 
     def get_status(self) -> dict:
         """Get daemon status."""

@@ -199,3 +199,44 @@ class SessionDBReader:
         except sqlite3.Error as e:
             logger.error(f"Database error: {e}")
             return []
+
+    def get_active_sessions_with_positions(self, limit: int = 20) -> list[dict]:
+        """
+        Get active sessions with their max message positions.
+
+        Returns sessions ordered by most recent activity (highest max_pos).
+        """
+        db_path = self._find_db()
+        if not db_path:
+            return []
+
+        try:
+            conn = sqlite3.connect(str(db_path), timeout=5.0)
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT session_key, MAX(position) as max_pos, COUNT(*) as msg_count
+                FROM messages
+                WHERE session_key LIKE 'websocket:%'
+                GROUP BY session_key
+                ORDER BY max_pos DESC
+                LIMIT ?
+            """, (limit,))
+
+            sessions = []
+            for row in cursor.fetchall():
+                session_key = row[0]
+                chat_id = session_key.replace('websocket:', '')
+                sessions.append({
+                    'session_key': session_key,
+                    'chat_id': chat_id,
+                    'max_pos': row[1],
+                    'msg_count': row[2]
+                })
+
+            conn.close()
+            return sessions
+
+        except sqlite3.Error as e:
+            logger.error(f"Database error: {e}")
+            return []

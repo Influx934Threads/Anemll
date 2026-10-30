@@ -237,6 +237,13 @@ class NanobotWSHandler:
         """Get session state by key."""
         return self._sessions.get(session_key)
 
+    def get_or_create_session(self, session_key: str) -> SessionState:
+        """Get or create a session state by key."""
+        if session_key not in self._sessions:
+            self._sessions[session_key] = SessionState(session_key=session_key)
+            logger.info(f"Created new session: {session_key[:16]}...")
+        return self._sessions[session_key]
+
     def get_uncompressed_turns(self, session_key: str) -> list[ConversationTurn]:
         """Get turns that haven't been compressed yet."""
         session = self._sessions.get(session_key)
