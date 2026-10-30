@@ -299,8 +299,8 @@ class ANEService:
         self.metrics.total_compression_time_ms += elapsed_ms
 
         logger.info(
-            f"Compressed: {summary.turn_count} turns → ~{summary.token_estimate:.0f} tokens "
-            f"(ratio: {self.metrics.compression_ratio:.1f}x, saved: {self.metrics.tokens_saved} tokens)"
+            f"[{session_key[:16]}] Compressed: {summary.turn_count} turns → ~{summary.token_estimate:.0f} tokens "
+            f"(ratio: {self.metrics.compression_ratio:.1f}x)"
         )
 
         # Persist state periodically (every 5 turns)
