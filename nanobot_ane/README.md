@@ -226,17 +226,24 @@ export LOGURU_LEVEL=WARNING
 </dict>
 ```
 
-## Session File Format
+## Session Storage
 
-Nanobot stores sessions as JSONL with base64-encoded filenames:
-- `websocket:b4fad3e3-...` → `d2Vic29ja2V0OmI0ZmFkM2UzLS4uLg.jsonl`
-
-Each line is a JSON record:
-```json
-{"_type": "metadata", "key": "websocket:...", "created_at": "..."}
-{"role": "user", "content": "hello", "timestamp": "..."}
-{"role": "assistant", "content": "Hi!", "timestamp": "..."}
+Nanobot stores sessions in SQLite at:
 ```
+~/.nanobot/sessions/<workspace_hash>/sessions.sqlite3
+```
+
+The `messages` table contains conversation history:
+```sql
+CREATE TABLE messages (
+    session_key TEXT NOT NULL,  -- e.g., "websocket:b4fad3e3-..."
+    position INTEGER NOT NULL,
+    record TEXT NOT NULL,       -- JSON blob with role, content, etc.
+    PRIMARY KEY (session_key, position)
+);
+```
+
+**Note:** JSONL files in the same directory are periodic exports/snapshots, not the live storage.
 
 ## Requirements
 

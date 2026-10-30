@@ -1,16 +1,16 @@
 """
-Session Database Reader - Reads nanobot session data from JSONL files.
+Session Database Reader - Reads nanobot session data from SQLite database.
 
 Provides direct access to nanobot's session storage for reading
 conversation messages.
 
-Nanobot stores sessions as JSONL files in:
-  ~/.nanobot/sessions/<workspace_hash>/<base64_session_key>.jsonl
+Nanobot stores sessions in SQLite at:
+  ~/.nanobot/sessions/<workspace_hash>/sessions.sqlite3
 """
 
-import base64
 import json
 import logging
+import sqlite3
 from pathlib import Path
 from typing import Optional
 
@@ -22,15 +22,16 @@ DEFAULT_SESSIONS_DIR = "~/.nanobot/sessions"
 
 class SessionDBReader:
     """
-    Reads session data directly from nanobot's JSONL files.
+    Reads session data directly from nanobot's SQLite database.
     """
 
     def __init__(self, sessions_dir: str = DEFAULT_SESSIONS_DIR):
         self.sessions_dir = Path(sessions_dir).expanduser()
         self._workspace_dir: Optional[Path] = None
+        self._db_path: Optional[Path] = None
 
     def _find_workspace_dir(self) -> Optional[Path]:
-        """Find the workspace subdirectory containing session files."""
+        """Find the workspace subdirectory containing sessions.sqlite3."""
         if self._workspace_dir and self._workspace_dir.exists():
             return self._workspace_dir
 
@@ -38,78 +39,38 @@ class SessionDBReader:
             logger.warning(f"Sessions directory not found: {self.sessions_dir}")
             return None
 
-        # Find workspace subdirectory (hash-named folder)
+        # Find workspace subdirectory (hash-named folder with sessions.sqlite3)
         for subdir in self.sessions_dir.iterdir():
             if subdir.is_dir() and not subdir.name.startswith('.'):
-                # Check if it has JSONL files
-                jsonl_files = list(subdir.glob("*.jsonl"))
-                if jsonl_files:
+                db_path = subdir / "sessions.sqlite3"
+                if db_path.exists():
                     self._workspace_dir = subdir
-                    logger.info(f"Found sessions workspace: {subdir}")
+                    self._db_path = db_path
+                    logger.info(f"Found sessions database: {db_path}")
                     return subdir
 
-        logger.warning("No workspace with session files found")
+        logger.warning("No workspace with sessions.sqlite3 found")
         return None
 
-    def _session_key_to_filename(self, chat_id: str) -> str:
-        """Convert chat_id to base64-encoded filename."""
-        session_key = f"websocket:{chat_id}"
-        # Use standard base64 encoding, strip padding (nanobot uses this format)
-        encoded = base64.b64encode(session_key.encode()).decode().rstrip('=')
-        return f"{encoded}.jsonl"
+    def _get_db_path(self) -> Optional[Path]:
+        """Get path to sessions.sqlite3."""
+        if self._db_path and self._db_path.exists():
+            return self._db_path
+        self._find_workspace_dir()
+        return self._db_path
 
-    def _filename_to_chat_id(self, filename: str) -> Optional[str]:
-        """Convert base64-encoded filename back to chat_id."""
+    def _connect(self) -> Optional[sqlite3.Connection]:
+        """Create a database connection."""
+        db_path = self._get_db_path()
+        if not db_path:
+            return None
         try:
-            # Remove .jsonl extension
-            encoded = filename.replace('.jsonl', '')
-            # Add padding if needed (base64 strings must be multiple of 4)
-            padding = 4 - len(encoded) % 4
-            if padding != 4:
-                encoded += '=' * padding
-            # Decode base64
-            decoded = base64.b64decode(encoded).decode()
-            # Extract chat_id from "websocket:<chat_id>"
-            if decoded.startswith('websocket:'):
-                return decoded[10:]  # len('websocket:') = 10
-            return None
-        except Exception:
-            return None
-
-    def _get_session_file(self, chat_id: str) -> Optional[Path]:
-        """Get the JSONL file path for a session."""
-        workspace_dir = self._find_workspace_dir()
-        if not workspace_dir:
-            return None
-
-        filename = self._session_key_to_filename(chat_id)
-        file_path = workspace_dir / filename
-
-        if file_path.exists():
-            return file_path
-
-        logger.debug(f"Session file not found: {file_path}")
-        return None
-
-    def _parse_jsonl_file(self, file_path: Path) -> list[dict]:
-        """Parse a JSONL file and return all records."""
-        records = []
-        try:
-            with open(file_path, 'r') as f:
-                for line_num, line in enumerate(f, 1):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        record = json.loads(line)
-                        record['_line_num'] = line_num  # Track position
-                        records.append(record)
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Invalid JSON at line {line_num}: {e}")
-                        continue
+            conn = sqlite3.connect(str(db_path), timeout=5.0)
+            conn.row_factory = sqlite3.Row
+            return conn
         except Exception as e:
-            logger.error(f"Error reading {file_path}: {e}")
-        return records
+            logger.error(f"Failed to connect to database: {e}")
+            return None
 
     def get_session_messages(
         self,
@@ -123,99 +84,145 @@ class SessionDBReader:
         Args:
             chat_id: The chat ID (without 'websocket:' prefix)
             limit: Maximum number of messages to return
-            after_position: Only get messages after this line number (-1 for all recent)
+            after_position: Only get messages after this position (-1 for all recent)
 
         Returns:
             List of message dicts with 'role', 'content', and 'position' keys
         """
-        file_path = self._get_session_file(chat_id)
-        if not file_path:
+        conn = self._connect()
+        if not conn:
             return []
 
-        records = self._parse_jsonl_file(file_path)
-
+        session_key = f"websocket:{chat_id}"
         messages = []
-        for record in records:
-            # Skip metadata
-            if record.get('_type') == 'metadata':
-                continue
 
-            role = record.get('role', '')
-            content = record.get('content', '')
-            position = record.get('_line_num', 0)
+        try:
+            cursor = conn.cursor()
 
-            # Skip tool calls and tool results for compression
-            if role in ('user', 'assistant') and content:
-                # Apply position filter
-                if after_position >= 0 and position <= after_position:
+            # Build query
+            if after_position >= 0:
+                query = """
+                    SELECT position, record FROM messages
+                    WHERE session_key = ? AND position > ?
+                    ORDER BY position ASC
+                """
+                params = (session_key, after_position)
+            else:
+                query = """
+                    SELECT position, record FROM messages
+                    WHERE session_key = ?
+                    ORDER BY position DESC
+                    LIMIT ?
+                """
+                params = (session_key, limit if limit > 0 else 1000)
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            # If we got DESC order, reverse to ASC
+            if after_position < 0:
+                rows = list(reversed(rows))
+
+            for row in rows:
+                try:
+                    record = json.loads(row['record'])
+                    role = record.get('role', '')
+                    content = record.get('content', '')
+
+                    # Only include user/assistant messages with content
+                    if role in ('user', 'assistant') and content:
+                        messages.append({
+                            'role': role,
+                            'content': content,
+                            'position': row['position']
+                        })
+                except json.JSONDecodeError:
                     continue
 
-                messages.append({
-                    'role': role,
-                    'content': content,
-                    'position': position
-                })
+            # Apply limit if we're filtering by position
+            if after_position >= 0 and limit > 0 and len(messages) > limit:
+                messages = messages[-limit:]
 
-        # Return most recent messages up to limit
-        if limit > 0 and len(messages) > limit:
-            messages = messages[-limit:]
+        except Exception as e:
+            logger.error(f"Error querying messages: {e}")
+        finally:
+            conn.close()
 
         return messages
 
     def get_message_count(self, chat_id: str) -> int:
         """Get the number of user/assistant messages in a session."""
-        messages = self.get_session_messages(chat_id, limit=0)  # No limit
-        return len(messages)
+        conn = self._connect()
+        if not conn:
+            return 0
+
+        session_key = f"websocket:{chat_id}"
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM messages WHERE session_key = ?",
+                (session_key,)
+            )
+            return cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(f"Error counting messages: {e}")
+            return 0
+        finally:
+            conn.close()
 
     def get_max_position(self, chat_id: str) -> int:
-        """Get the maximum message position (line number) in a session."""
-        file_path = self._get_session_file(chat_id)
-        if not file_path:
+        """Get the maximum message position in a session."""
+        conn = self._connect()
+        if not conn:
             return -1
 
+        session_key = f"websocket:{chat_id}"
         try:
-            with open(file_path, 'r') as f:
-                line_count = sum(1 for line in f if line.strip())
-            return line_count
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT MAX(position) FROM messages WHERE session_key = ?",
+                (session_key,)
+            )
+            result = cursor.fetchone()[0]
+            return result if result is not None else -1
         except Exception as e:
-            logger.error(f"Error counting lines in {file_path}: {e}")
+            logger.error(f"Error getting max position: {e}")
             return -1
+        finally:
+            conn.close()
 
     def list_sessions(self, limit: int = 10) -> list[dict]:
         """List recent sessions."""
-        workspace_dir = self._find_workspace_dir()
-        if not workspace_dir:
+        conn = self._connect()
+        if not conn:
             return []
 
         sessions = []
-        for jsonl_file in sorted(
-            workspace_dir.glob("*.jsonl"),
-            key=lambda f: f.stat().st_mtime,
-            reverse=True
-        ):
-            chat_id = self._filename_to_chat_id(jsonl_file.name)
-            if not chat_id:
-                continue
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT s.key, s.created_at, s.updated_at,
+                       (SELECT COUNT(*) FROM messages m WHERE m.session_key = s.key) as msg_count
+                FROM sessions s
+                WHERE s.key LIKE 'websocket:%'
+                ORDER BY s.updated_at DESC
+                LIMIT ?
+            """, (limit,))
 
-            # Get metadata from first line
-            try:
-                with open(jsonl_file, 'r') as f:
-                    first_line = f.readline()
-                    if first_line:
-                        metadata = json.loads(first_line)
-                        if metadata.get('_type') == 'metadata':
-                            sessions.append({
-                                'key': f"websocket:{chat_id}",
-                                'chat_id': chat_id,
-                                'updated_at': metadata.get('updated_at', ''),
-                                'title': metadata.get('metadata', {}).get('title', ''),
-                                'file_path': str(jsonl_file)
-                            })
-            except Exception:
-                continue
-
-            if len(sessions) >= limit:
-                break
+            for row in cursor.fetchall():
+                session_key = row['key']
+                chat_id = session_key.replace('websocket:', '') if session_key.startswith('websocket:') else session_key
+                sessions.append({
+                    'key': session_key,
+                    'chat_id': chat_id,
+                    'created_at': row['created_at'],
+                    'updated_at': row['updated_at'],
+                    'msg_count': row['msg_count']
+                })
+        except Exception as e:
+            logger.error(f"Error listing sessions: {e}")
+        finally:
+            conn.close()
 
         return sessions
 
@@ -223,41 +230,40 @@ class SessionDBReader:
         """
         Get active sessions with their max message positions.
 
-        Returns sessions ordered by most recent modification time.
+        Returns sessions ordered by most recent message activity.
         """
-        workspace_dir = self._find_workspace_dir()
-        if not workspace_dir:
+        conn = self._connect()
+        if not conn:
             return []
 
         sessions = []
-        for jsonl_file in sorted(
-            workspace_dir.glob("*.jsonl"),
-            key=lambda f: f.stat().st_mtime,
-            reverse=True
-        ):
-            # Only include websocket sessions
-            chat_id = self._filename_to_chat_id(jsonl_file.name)
-            if not chat_id:
-                continue
+        try:
+            cursor = conn.cursor()
+            # Get sessions with their max positions, ordered by max position (most recent activity)
+            cursor.execute("""
+                SELECT
+                    m.session_key,
+                    MAX(m.position) as max_pos,
+                    COUNT(*) as msg_count
+                FROM messages m
+                WHERE m.session_key LIKE 'websocket:%'
+                GROUP BY m.session_key
+                ORDER BY max_pos DESC
+                LIMIT ?
+            """, (limit,))
 
-            # Count lines (positions)
-            try:
-                with open(jsonl_file, 'r') as f:
-                    line_count = sum(1 for line in f if line.strip())
-
+            for row in cursor.fetchall():
+                session_key = row['session_key']
+                chat_id = session_key.replace('websocket:', '') if session_key.startswith('websocket:') else session_key
                 sessions.append({
-                    'session_key': f"websocket:{chat_id}",
+                    'session_key': session_key,
                     'chat_id': chat_id,
-                    'max_pos': line_count,
-                    'msg_count': line_count,  # Approximate
-                    'file_path': str(jsonl_file),
-                    'mtime': jsonl_file.stat().st_mtime
+                    'max_pos': row['max_pos'],
+                    'msg_count': row['msg_count']
                 })
-            except Exception as e:
-                logger.warning(f"Error reading {jsonl_file}: {e}")
-                continue
-
-            if len(sessions) >= limit:
-                break
+        except Exception as e:
+            logger.error(f"Error getting active sessions: {e}")
+        finally:
+            conn.close()
 
         return sessions
