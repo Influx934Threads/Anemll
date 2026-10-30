@@ -1,0 +1,265 @@
+#!/bin/bash
+#
+# anectl - ANE Compression Daemon Control Script
+#
+# Usage:
+#   anectl start    - Start the daemon
+#   anectl stop     - Stop the daemon
+#   anectl restart  - Restart the daemon
+#   anectl status   - Show daemon status
+#   anectl logs     - Tail daemon logs
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DAEMON_SCRIPT="$SCRIPT_DIR/ane_daemon.py"
+PID_FILE="$HOME/.nanobot/run/ane_daemon.pid"
+LOG_FILE="$HOME/.nanobot/logs/ane_daemon.log"
+VENV_PATH="$HOME/Build/Anemll/env-anemll"
+
+# Default settings
+MODEL_PATH="$HOME/Build/Anemll/models/qwen3-1.7b-ctx2048"
+WS_URL="ws://127.0.0.1:8765"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+get_pid() {
+    if [ -f "$PID_FILE" ]; then
+        cat "$PID_FILE"
+    fi
+}
+
+is_running() {
+    local pid=$(get_pid)
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+start_daemon() {
+    if is_running; then
+        echo -e "${YELLOW}ANE Daemon is already running (PID: $(get_pid))${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}Starting ANE Daemon...${NC}"
+
+    # Ensure directories exist
+    mkdir -p "$HOME/.nanobot/run"
+    mkdir -p "$HOME/.nanobot/logs"
+
+    # Activate virtualenv and start daemon
+    source "$VENV_PATH/bin/activate"
+
+    nohup python "$DAEMON_SCRIPT" \
+        --model "$MODEL_PATH" \
+        --ws-url "$WS_URL" \
+        > /dev/null 2>&1 &
+
+    # Wait a moment for daemon to start
+    sleep 2
+
+    if is_running; then
+        echo -e "${GREEN}ANE Daemon started (PID: $(get_pid))${NC}"
+        echo -e "Log file: $LOG_FILE"
+    else
+        echo -e "${RED}Failed to start ANE Daemon${NC}"
+        echo -e "Check logs: $LOG_FILE"
+        return 1
+    fi
+}
+
+stop_daemon() {
+    if ! is_running; then
+        echo -e "${YELLOW}ANE Daemon is not running${NC}"
+        # Clean up stale PID file
+        rm -f "$PID_FILE"
+        return 0
+    fi
+
+    local pid=$(get_pid)
+    echo -e "${BLUE}Stopping ANE Daemon (PID: $pid)...${NC}"
+
+    kill "$pid" 2>/dev/null
+
+    # Wait for graceful shutdown
+    local count=0
+    while is_running && [ $count -lt 10 ]; do
+        sleep 1
+        count=$((count + 1))
+    done
+
+    if is_running; then
+        echo -e "${YELLOW}Forcing shutdown...${NC}"
+        kill -9 "$pid" 2>/dev/null
+        sleep 1
+    fi
+
+    rm -f "$PID_FILE"
+    echo -e "${GREEN}ANE Daemon stopped${NC}"
+}
+
+show_status() {
+    echo -e "${BLUE}=== ANE Daemon Status ===${NC}"
+    echo
+
+    if is_running; then
+        local pid=$(get_pid)
+        echo -e "Status:  ${GREEN}Running${NC}"
+        echo -e "PID:     $pid"
+
+        # Show memory usage
+        if command -v ps &> /dev/null; then
+            local mem=$(ps -o rss= -p "$pid" 2>/dev/null | awk '{printf "%.1f MB", $1/1024}')
+            echo -e "Memory:  $mem"
+        fi
+    else
+        echo -e "Status:  ${RED}Stopped${NC}"
+    fi
+
+    echo
+    echo -e "Model:     $MODEL_PATH"
+    echo -e "WebSocket: $WS_URL"
+    echo -e "Context:   http://127.0.0.1:8766"
+    echo -e "Log:       $LOG_FILE"
+
+    # Show recent log activity
+    if [ -f "$LOG_FILE" ]; then
+        echo
+        echo -e "${BLUE}Recent activity:${NC}"
+        tail -3 "$LOG_FILE" 2>/dev/null | sed 's/^/  /'
+    fi
+}
+
+show_logs() {
+    if [ ! -f "$LOG_FILE" ]; then
+        echo -e "${YELLOW}No log file found${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}=== ANE Daemon Logs ===${NC}"
+    echo -e "Press Ctrl+C to stop"
+    echo
+    tail -f "$LOG_FILE"
+}
+
+show_metrics() {
+    if [ ! -f "$LOG_FILE" ]; then
+        echo -e "${YELLOW}No log file found${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}=== ANE Compression Metrics ===${NC}"
+    echo
+
+    # Extract latest metrics from logs
+    if grep -q "ratio:" "$LOG_FILE"; then
+        echo -e "${GREEN}Recent compression activity:${NC}"
+        grep "Turn compressed" "$LOG_FILE" | tail -5 | sed 's/^/  /'
+        echo
+
+        # Count total turns
+        total_turns=$(grep -c "Turn compressed" "$LOG_FILE" 2>/dev/null || echo "0")
+        echo -e "Total turns compressed: ${GREEN}$total_turns${NC}"
+
+        # Get latest ratio if available
+        latest=$(grep "ratio:" "$LOG_FILE" | tail -1)
+        if [ -n "$latest" ]; then
+            echo -e "Latest: $latest"
+        fi
+    else
+        echo -e "${YELLOW}No compression metrics yet - chat with nanobot to generate data${NC}"
+    fi
+}
+
+show_context() {
+    local session_key="${1:-}"
+
+    if ! is_running; then
+        echo -e "${RED}ANE Daemon is not running${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}=== ANE Context Server ===${NC}"
+    echo
+
+    if [ -z "$session_key" ]; then
+        # Show all contexts
+        echo -e "Fetching all contexts from http://127.0.0.1:8766/context ..."
+        echo
+        curl -s http://127.0.0.1:8766/context | python3 -m json.tool 2>/dev/null || \
+            echo -e "${RED}Failed to fetch contexts${NC}"
+    else
+        # Show specific session context
+        echo -e "Fetching context for session: $session_key"
+        echo
+        curl -s "http://127.0.0.1:8766/context/$session_key" | python3 -m json.tool 2>/dev/null || \
+            echo -e "${RED}Failed to fetch context${NC}"
+    fi
+}
+
+show_help() {
+    echo "ANE Compression Daemon Control"
+    echo
+    echo "Usage: anectl <command>"
+    echo
+    echo "Commands:"
+    echo "  start          Start the daemon"
+    echo "  stop           Stop the daemon"
+    echo "  restart        Restart the daemon"
+    echo "  status         Show daemon status"
+    echo "  logs           Tail daemon logs"
+    echo "  metrics        Show compression metrics"
+    echo "  context [key]  Show compressed context (all or by session key)"
+    echo "  help           Show this help"
+    echo
+    echo "Configuration:"
+    echo "  Model:     $MODEL_PATH"
+    echo "  WebSocket: $WS_URL"
+    echo "  Context:   http://127.0.0.1:8766"
+    echo "  Logs:      $LOG_FILE"
+}
+
+# Main command handler
+case "${1:-}" in
+    start)
+        start_daemon
+        ;;
+    stop)
+        stop_daemon
+        ;;
+    restart)
+        stop_daemon
+        sleep 1
+        start_daemon
+        ;;
+    status)
+        show_status
+        ;;
+    logs)
+        show_logs
+        ;;
+    metrics)
+        show_metrics
+        ;;
+    context)
+        show_context "${2:-}"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    "")
+        show_status
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        echo
+        show_help
+        exit 1
+        ;;
+esac
