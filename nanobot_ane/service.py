@@ -510,27 +510,39 @@ Summary (no duplicates, preserve specifics):"""
 
         # Limit input size to 4000 chars
         truncated_content = content[:4000]
-        prompt = f"""Compress this tool output to its essential information.
-Keep key data, remove redundancy. Be concise but complete.
+        prompt = f"""Summarize this tool output in 1-3 sentences. Extract only the essential facts.
+
+Example:
+Input: "The command executed successfully. Here are the results: File alpha.py found at /usr/local/bin with size 2048 bytes. File beta.py found at /home/user with size 1024 bytes. Operation completed without errors. Total files processed: 2. Execution time: 0.5 seconds."
+Output: "Found 2 files: alpha.py (2048 bytes, /usr/local/bin) and beta.py (1024 bytes, /home/user). Completed in 0.5s."
 
 Tool output:
 {truncated_content}
 
-Compressed:"""
+Summary:"""
 
         compressed = await self._generate(prompt, max_tokens=500)
 
-        # Sanity check - don't return if compression failed
+        # Sanity checks
         if len(compressed) < 10:
+            logger.debug("Tool compression failed: output too short")
             return content
 
         original_len = len(content)
         compressed_len = len(compressed)
-        ratio = compressed_len / original_len
 
+        # Don't use compression if it didn't actually compress
+        if compressed_len >= original_len:
+            logger.debug(
+                f"Tool compression skipped: output larger than input "
+                f"({compressed_len} >= {original_len})"
+            )
+            return content
+
+        ratio = original_len / compressed_len
         logger.debug(
-            f"Tool result compressed: {original_len} -> {compressed_len} "
-            f"({ratio:.1%})"
+            f"Tool result compressed: {original_len} -> {compressed_len} chars "
+            f"({ratio:.1f}x reduction)"
         )
 
         return compressed
