@@ -1,7 +1,20 @@
 """
 ANE Context Provider - Injects compressed context into nanobot prompts
 
-This is Phase 3: The delivery mechanism that makes compressed history
+DEPRECATED: This RuntimeContextBlock injection approach is no longer the
+primary integration path. It was ADDITIVE (summary sits beside history)
+rather than replacing old messages.
+
+The new integration uses nanobot's native compaction system via
+`MemoryArchiver.archive()` in `/opt/homebrew/lib/python3.11/site-packages/nanobot/agent/memory.py`
+which calls ANE via POST /compress endpoint. This makes ANE summaries
+actually REPLACE old messages (via `last_archived` boundary), saving real tokens.
+
+This file is kept for reference and debugging (GET /context/{session_key}
+endpoint still works), but create_ane_context_provider() should not be
+used for production integration.
+
+Legacy Phase 3: The delivery mechanism that makes compressed history
 available to the GPU model before each inference call.
 """
 

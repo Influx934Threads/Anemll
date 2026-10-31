@@ -162,6 +162,8 @@ class ANEDaemon:
         self._http_app.router.add_get("/context", self._handle_get_all_contexts)
         self._http_app.router.add_get("/status", self._handle_status)
         self._http_app.router.add_get("/metrics", self._handle_metrics)
+        # Direct compression endpoint for nanobot integration
+        self._http_app.router.add_post("/compress", self._handle_compress)
 
         self._http_runner = web.AppRunner(self._http_app)
         await self._http_runner.setup()
@@ -225,6 +227,81 @@ class ANEDaemon:
         if not self.ane_service:
             return web.json_response({"error": "ANE service not ready"}, status=503)
         return web.json_response(self.ane_service.get_metrics())
+
+    async def _handle_compress(self, request: web.Request) -> web.Response:
+        """
+        POST /compress - Return pre-computed summary for nanobot integration.
+
+        This endpoint returns the ALREADY COMPUTED summary from continuous
+        background compression. It does NOT reprocess all messages on each call -
+        the advantage of ANE is processing small bits continuously, not 40k
+        context in one go.
+
+        The continuous polling loop handles turn-by-turn compression in background.
+        This endpoint just returns what's already been computed.
+
+        Request body:
+            {
+                "session_key": str,
+                "messages": list[dict],  # For reference only, not reprocessed
+                "previous_summary": str | None  # Fallback if no ANE summary yet
+            }
+
+        Response:
+            {
+                "summary": str | None,  # Pre-computed summary (instant return)
+                "stats": dict  # Session compression statistics
+            }
+        """
+        if not self.ane_service:
+            return web.json_response({"error": "ANE service not ready"}, status=503)
+
+        try:
+            data = await request.json()
+            session_key = data.get("session_key")
+            messages = data.get("messages", [])
+            previous_summary = data.get("previous_summary")
+
+            if not session_key:
+                return web.json_response({"error": "session_key required"}, status=400)
+
+            if not messages:
+                return web.json_response({"error": "messages required"}, status=400)
+
+            self.logger.info(
+                f"Compress request for {session_key[:16]}...: {len(messages)} messages"
+            )
+
+            # Process messages through ANE compression
+            summary = await self.ane_service.generate_summary_for_nanobot(
+                session_key,
+                messages,
+                previous_summary,
+            )
+
+            stats = self.ane_service.get_session_stats(session_key)
+
+            if summary:
+                self.logger.info(
+                    f"Compression complete for {session_key[:16]}...: "
+                    f"{stats.get('turn_count', 0)} turns → {len(summary)} chars"
+                )
+            else:
+                self.logger.warning(
+                    f"Compression returned no summary for {session_key[:16]}..."
+                )
+
+            return web.json_response({
+                "summary": summary,
+                "stats": stats,
+            })
+
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Invalid JSON in compress request: {e}")
+            return web.json_response({"error": f"Invalid JSON: {e}"}, status=400)
+        except Exception as e:
+            self.logger.error(f"Compression error: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=500)
 
     # ─── WebSocket Connection ───
 

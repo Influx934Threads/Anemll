@@ -116,6 +116,9 @@ class ANEService:
         # Track last processed position per session (for daemon)
         self._session_positions: dict[str, int] = {}
 
+        # Lock for session state access (prevents race between worker and API)
+        self._state_lock = asyncio.Lock()
+
         # Load persisted state
         self._load_state()
 
@@ -269,8 +272,11 @@ class ANEService:
         # Extract key facts from the turn
         facts = await self._extract_facts(turn)
 
-        # Get or create session summary
-        summary = self.session_summaries.get(session_key, SessionSummary())
+        # Get or create session summary (under lock for consistency)
+        async with self._state_lock:
+            summary = self.session_summaries.get(session_key, SessionSummary())
+            # Track old output for delta metrics (FIX: use delta instead of sum)
+            old_output_tokens = summary.token_estimate
 
         # Merge new facts into summary
         summary.facts.extend(facts)
@@ -287,14 +293,14 @@ class ANEService:
         # Estimate output tokens
         summary.token_estimate = int(len(summary.text.split()) * 1.3)
 
-        self.session_summaries[session_key] = summary
+        # Update session state under lock (prevents race with API reads)
+        async with self._state_lock:
+            self.session_summaries[session_key] = summary
 
-        # Update metrics
+        # Update metrics with proper delta tracking (FIX: was using sum which caused inflated ratios)
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         self.metrics.total_input_tokens += input_tokens
-        self.metrics.total_output_tokens = sum(
-            s.token_estimate for s in self.session_summaries.values()
-        )
+        self.metrics.total_output_tokens += (summary.token_estimate - old_output_tokens)
         self.metrics.total_turns_compressed += 1
         self.metrics.total_compression_time_ms += elapsed_ms
 
@@ -510,3 +516,152 @@ Compressed:"""
         old_pos = self._session_positions.get(session_key, -1)
         self._session_positions[session_key] = new_position
         logger.info(f"Reset session {session_key[:16]}... position: {old_pos} -> {new_position}")
+
+    # ─── NANOBOT INTEGRATION ───
+
+    async def generate_summary_for_nanobot(
+        self,
+        session_key: str,
+        messages: list[dict],
+        previous_summary: str | None = None,
+    ) -> str | None:
+        """
+        Return the pre-computed summary for nanobot's archival system.
+
+        This is called by nanobot's modified MemoryArchiver when compaction triggers.
+        It returns the ALREADY COMPUTED summary from continuous background compression,
+        NOT reprocessing all messages (that would defeat the purpose of ANE's
+        continuous small-bit compression advantage).
+
+        The continuous polling loop (_poll_all_sessions) handles the actual
+        turn-by-turn compression in the background.
+
+        Args:
+            session_key: Unique session identifier
+            messages: List of message dicts from nanobot (for reference/logging only)
+            previous_summary: Optional previous summary (used if we have nothing yet)
+
+        Returns:
+            Pre-computed summary text, or None if no summary available yet
+        """
+        # Normalize session key - nanobot sends "websocket:UUID" but we store just "UUID"
+        normalized_key = session_key.split(":")[-1] if ":" in session_key else session_key
+
+        # Return the already-computed summary from continuous compression
+        # Use lock to ensure we don't read while worker is mid-write
+        async with self._state_lock:
+            summary = self.session_summaries.get(normalized_key)
+
+            if summary and summary.text:
+                logger.info(
+                    f"[{session_key[:16]}] Returning pre-computed summary: "
+                    f"{summary.turn_count} turns, {len(summary.text)} chars"
+                )
+                return summary.text
+
+        # No pre-computed summary available yet
+        # If nanobot provided a previous summary, we could use that as fallback
+        if previous_summary:
+            logger.info(
+                f"[{session_key[:16]}] No ANE summary yet, using nanobot's previous: "
+                f"{len(previous_summary)} chars"
+            )
+            return previous_summary
+
+        logger.debug(
+            f"[{session_key[:16]}] No summary available yet "
+            f"(messages provided: {len(messages)})"
+        )
+        return None
+
+    def _messages_to_turns(self, messages: list[dict]) -> list[list[dict]]:
+        """Convert a list of messages to turn pairs for compression.
+
+        A turn is a user message followed by an assistant message.
+        System messages are skipped.
+        """
+        turns = []
+        i = 0
+
+        while i < len(messages):
+            msg = messages[i]
+            role = msg.get("role", "")
+
+            # Skip system messages and hidden markers
+            if role == "system" or msg.get("_hidden"):
+                i += 1
+                continue
+
+            # Look for user->assistant pairs
+            if role == "user":
+                # Find next assistant message
+                j = i + 1
+                while j < len(messages):
+                    next_msg = messages[j]
+                    next_role = next_msg.get("role", "")
+
+                    if next_role == "assistant":
+                        turns.append([msg, next_msg])
+                        i = j + 1
+                        break
+                    elif next_role == "user":
+                        # Another user message without assistant response
+                        break
+                    j += 1
+                else:
+                    # No assistant response found
+                    i += 1
+            else:
+                i += 1
+
+        return turns
+
+    async def _process_turn_compression_direct(
+        self,
+        session_key: str,
+        turn: list[dict],
+        summary: SessionSummary,
+    ):
+        """Process a turn compression directly (not via queue).
+
+        This is used for synchronous compression when nanobot requests it.
+        Updates the provided summary object in place.
+        """
+        start_time = time.perf_counter()
+
+        # Calculate input tokens (rough estimate: 1.3 tokens per word)
+        input_text = " ".join([msg.get('content', '') for msg in turn])
+        input_tokens = int(len(input_text.split()) * 1.3)
+
+        # Track old output for delta metrics
+        old_output_tokens = summary.token_estimate
+
+        # Extract key facts from the turn
+        facts = await self._extract_facts(turn)
+
+        # Merge new facts into summary
+        summary.facts.extend(facts)
+        summary.turn_count += 1
+        summary.input_tokens += input_tokens
+        summary.last_updated = datetime.now()
+
+        # Regenerate summary text if needed
+        if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
+            summary.text = await self._consolidate_facts(summary.facts, summary.text)
+            # Prune old facts after consolidation
+            summary.facts = summary.facts[-5:]  # Keep recent for context
+
+        # Estimate output tokens
+        summary.token_estimate = int(len(summary.text.split()) * 1.3)
+
+        # Update metrics with proper delta tracking
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        self.metrics.total_input_tokens += input_tokens
+        self.metrics.total_output_tokens += (summary.token_estimate - old_output_tokens)
+        self.metrics.total_turns_compressed += 1
+        self.metrics.total_compression_time_ms += elapsed_ms
+
+        logger.debug(
+            f"[{session_key[:16]}] Turn compressed: "
+            f"+{input_tokens} input, {summary.token_estimate} output tokens"
+        )
