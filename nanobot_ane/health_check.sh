@@ -8,11 +8,11 @@
 JSON_OUTPUT=false
 [[ "$1" == "--json" ]] && JSON_OUTPUT=true
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BOLD='\033[1m'
-NC='\033[0m'
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+BOLD=$'\033[1m'
+NC=$'\033[0m'
 
 # Check if jq is available
 HAS_JQ=false
@@ -75,9 +75,9 @@ fi
 
 # Human-readable table output
 echo ""
-echo "${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
-echo "${BOLD}                    NANOBOT + ANE HEALTH CHECK${NC}"
-echo "${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
+printf "%s═══════════════════════════════════════════════════════════════════════════%s\n" "$BOLD" "$NC"
+printf "%s                    NANOBOT + ANE HEALTH CHECK%s\n" "$BOLD" "$NC"
+printf "%s═══════════════════════════════════════════════════════════════════════════%s\n" "$BOLD" "$NC"
 echo "Timestamp: $(date)"
 echo ""
 
@@ -136,7 +136,7 @@ echo ""
 
 # ANE Metrics Table
 if [[ -n "$metrics_json" ]]; then
-    echo "${BOLD}ANE Compression Metrics${NC}"
+    printf "%sANE Compression Metrics%s\n" "$BOLD" "$NC"
     print_table_header "Metric" "Value" "Description"
 
     if $HAS_JQ; then
@@ -162,7 +162,7 @@ if [[ -n "$metrics_json" ]]; then
 fi
 
 # Config Table
-echo "${BOLD}Nanobot Config (Key Parameters)${NC}"
+printf "%sNanobot Config (Key Parameters)%s\n" "$BOLD" "$NC"
 print_table_header "Parameter" "Value" "Description"
 
 if [[ -f ~/.nanobot/config.json ]]; then
@@ -192,7 +192,7 @@ else
 fi
 
 echo ""
-echo "${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
+printf "%s═══════════════════════════════════════════════════════════════════════════%s\n" "$BOLD" "$NC"
 
 # Summary
 all_ok=true
@@ -201,9 +201,9 @@ all_ok=true
 [[ "$gpu_status" != "OK" ]] && all_ok=false
 
 if $all_ok; then
-    echo -e "${GREEN}${BOLD}✓ All services healthy - ready for soak testing${NC}"
+    printf "%s%s✓ All services healthy - ready for soak testing%s\n" "$GREEN" "$BOLD" "$NC"
 else
-    echo -e "${YELLOW}${BOLD}⚠ Some services need attention${NC}"
+    printf "%s%s⚠ Some services need attention%s\n" "$YELLOW" "$BOLD" "$NC"
 fi
-echo "${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
+printf "%s═══════════════════════════════════════════════════════════════════════════%s\n" "$BOLD" "$NC"
 echo ""
