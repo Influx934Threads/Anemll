@@ -25,6 +25,7 @@ ANEMLLChat/.build/
 lib/
 bin/
 share/
+models/
 ./*.logs/  # logs / test results
 evaluate/results/
 results/
