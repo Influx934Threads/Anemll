@@ -172,6 +172,46 @@ The new approach integrates with nanobot's native compaction, so summaries **REP
 5. Check logs: `tail -f ~/.nanobot/logs/ane_daemon.log`
 6. Look for: `"Returning pre-computed summary: X turns, Y chars"`
 
+## Health Check
+
+Run the health check script to verify all services are running:
+
+```bash
+./health_check.sh          # Human-readable table output
+./health_check.sh --json   # JSON output for automation
+```
+
+Example output:
+```
+═══════════════════════════════════════════════════════════════════════════
+                    NANOBOT + ANE HEALTH CHECK
+═══════════════════════════════════════════════════════════════════════════
+Service                          │ Status   │ Details
+─────────────────────────────────┼──────────┼──────────────────────────────
+Nanobot Gateway (:18790)         │ OK       │ v0.4.0, ready=true
+ANE Daemon (:8766)               │ OK       │ 3 sessions, 7 pending
+GPU LLM Server (:8080)           │ OK       │ Ternary-Bonsai-2-9B-PQ2_0
+
+ANE Compression Metrics
+Metric                           │ Value    │ Description
+─────────────────────────────────┼──────────┼──────────────────────────────
+Turns Compressed                 │ 98       │ Total conversation turns
+Tokens Saved                     │ 29426    │ Input tokens not sent to GPU
+Compression Ratio                │ 46.76x   │ Input / Output tokens
+
+Nanobot Config (Key Parameters)
+Parameter                        │ Value    │ Description
+─────────────────────────────────┼──────────┼──────────────────────────────
+idleCompactAfterMinutes          │ 1        │ Trigger compaction after idle
+idleCompactCheckIntervalSeconds  │ 30       │ Check interval for idle
+maxToolIterations                │ 20       │ Max tool calls per turn
+maxSessionMessagesPerMinute      │ 3        │ Rate limit
+denyPatterns                     │ 6 rules  │ Blocked command patterns
+═══════════════════════════════════════════════════════════════════════════
+✓ All services healthy - ready for soak testing
+═══════════════════════════════════════════════════════════════════════════
+```
+
 ## Troubleshooting
 
 **"No ANE summary yet"**
