@@ -264,3 +264,21 @@ This allows the daemon to restart without losing compression history.
 ## License
 
 Part of the ANEMLL project - Apache 2.0 License
+
+---
+
+## Development Workflow
+
+This code lives in a fork: `Influx934Threads/Anemll`
+
+```bash
+# Push to fork (not origin)
+git push fork main
+
+# When ready to submit upstream:
+gh pr create --repo Anemll/Anemll --draft
+```
+
+**Remotes:**
+- `origin` = `Anemll/Anemll` (upstream, read-only for contributors)
+- `fork` = `Influx934Threads/Anemll` (push here)
