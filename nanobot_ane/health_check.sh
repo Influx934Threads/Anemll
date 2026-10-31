@@ -34,8 +34,8 @@ json_get() {
 }
 
 print_table_header() {
-    printf "${BOLD}%-30s │ %-8s │ %s${NC}\n" "$1" "$2" "$3"
-    printf "%-30s─┼──────────┼─%s\n" "──────────────────────────────" "──────────────────────────────"
+    printf "%s%-32s │ %-8s │ %s%s\n" "$BOLD" "$1" "$2" "$3" "$NC"
+    printf "%-32s─┼──────────┼─%s\n" "────────────────────────────────" "──────────────────────────────"
 }
 
 print_table_row() {
@@ -44,11 +44,11 @@ print_table_row() {
     local details="$3"
 
     if [[ "$status" == "OK" ]]; then
-        printf "%-30s │ ${GREEN}%-8s${NC} │ %s\n" "$name" "$status" "$details"
+        printf "%-32s │ %s%-8s%s │ %s\n" "$name" "$GREEN" "$status" "$NC" "$details"
     elif [[ "$status" == "FAIL" ]]; then
-        printf "%-30s │ ${RED}%-8s${NC} │ %s\n" "$name" "$status" "$details"
+        printf "%-32s │ %s%-8s%s │ %s\n" "$name" "$RED" "$status" "$NC" "$details"
     else
-        printf "%-30s │ ${YELLOW}%-8s${NC} │ %s\n" "$name" "$status" "$details"
+        printf "%-32s │ %s%-8s%s │ %s\n" "$name" "$YELLOW" "$status" "$NC" "$details"
     fi
 }
 
