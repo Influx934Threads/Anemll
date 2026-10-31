@@ -87,6 +87,7 @@ class ANEService:
     """
 
     STATE_FILE = "~/.nanobot/run/ane_state.json"
+    PROMPTS_FILE = Path(__file__).parent / "NANOBOT_ANE_PROMPTS.md"
 
     def __init__(
         self,
@@ -118,6 +119,9 @@ class ANEService:
 
         # Lock for session state access (prevents race between worker and API)
         self._state_lock = asyncio.Lock()
+
+        # Load compression prompts (from file or defaults)
+        self._load_prompts()
 
         # Load persisted state
         self._load_state()
@@ -158,6 +162,85 @@ class ANEService:
 
         except Exception as e:
             logger.warning(f"Failed to load state: {e}")
+
+    def _load_prompts(self):
+        """Load compression prompts from prompts.md or use defaults."""
+        import re
+
+        # Default prompts (fallback)
+        self.prompt_fact_extraction = """Extract key facts from this conversation turn. Focus on preserving SPECIFIC DETAILS like:
+- Numeric thresholds (percentages, counts, sizes)
+- Timing/schedule details (times, frequencies, durations)
+- Tool names and their specific parameters
+- File paths and locations
+- Requirements and constraints
+
+Output as JSON array of facts, each with "type" and "content".
+Types: requirement, configuration, schedule, threshold, decision, preference, context, task, result, tool, location
+
+Turn:
+{turn_text}
+
+Facts (JSON array):"""
+
+        self.prompt_consolidate_with_prev = """Consolidate this summary with new facts. AGGRESSIVELY REMOVE DUPLICATES and merge similar information.
+
+Rules:
+- Each fact should appear ONLY ONCE (no repetition)
+- Preserve SPECIFIC NUMBERS (percentages, times, counts)
+- Preserve SPECIFIC NAMES (tools, files, paths)
+- Merge similar statements into single concise bullets
+- Remove vague generalizations in favor of specifics
+
+Previous summary (MAY CONTAIN DUPLICATES - ELIMINATE THEM):
+{previous_summary}
+
+New facts:
+{facts_text}
+
+Consolidated summary (no duplicates, preserve specifics):"""
+
+        self.prompt_consolidate_initial = """Consolidate these facts into a brief summary paragraph.
+
+Rules:
+- Merge similar information into single statements
+- Each fact should appear only once
+- Preserve specific numbers, times, and tool names
+- Be concise but include important details
+
+Facts:
+{facts_text}
+
+Summary (no duplicates, preserve specifics):"""
+
+        # Try to load from prompts.md
+        if self.PROMPTS_FILE.exists():
+            try:
+                with open(self.PROMPTS_FILE) as f:
+                    content = f.read()
+
+                # Extract prompts from code blocks in markdown
+                # Pattern: section header followed by triple backticks
+                fact_match = re.search(r'## Fact Extraction Prompt.*?```\n(.*?)```', content, re.DOTALL)
+                consolidate_prev_match = re.search(r'## Consolidation Prompt \(With Previous Summary\).*?```\n(.*?)```', content, re.DOTALL)
+                consolidate_init_match = re.search(r'## Consolidation Prompt \(Initial.*?```\n(.*?)```', content, re.DOTALL)
+
+                if fact_match:
+                    self.prompt_fact_extraction = fact_match.group(1).strip()
+                    logger.info("Loaded fact extraction prompt from NANOBOT_ANE_PROMPTS.md")
+
+                if consolidate_prev_match:
+                    self.prompt_consolidate_with_prev = consolidate_prev_match.group(1).strip()
+                    logger.info("Loaded consolidation (with previous) prompt from NANOBOT_ANE_PROMPTS.md")
+
+                if consolidate_init_match:
+                    self.prompt_consolidate_initial = consolidate_init_match.group(1).strip()
+                    logger.info("Loaded consolidation (initial) prompt from NANOBOT_ANE_PROMPTS.md")
+
+            except Exception as e:
+                logger.warning(f"Failed to load prompts from {self.PROMPTS_FILE}: {e}. Using defaults.")
+        else:
+            logger.debug(f"Prompts file not found at {self.PROMPTS_FILE}, using defaults")
 
     def _save_state(self):
         """Persist state to disk."""
@@ -265,6 +348,16 @@ class ANEService:
         session_key = task.session_key
         turn = task.content  # list of messages (user + assistant)
 
+        # Get current turn count for logging
+        async with self._state_lock:
+            summary = self.session_summaries.get(session_key, SessionSummary())
+            current_turn_num = summary.turn_count + 1
+            is_new_session = session_key not in self.session_summaries
+
+        if is_new_session:
+            logger.info(f"[{session_key[:16]}] Starting new session compression")
+        logger.info(f"[{session_key[:16]}] Processing turn #{current_turn_num}...")
+
         # Calculate input tokens (rough estimate: 1.3 tokens per word)
         input_text = " ".join([msg.get('content', '') for msg in turn])
         input_tokens = int(len(input_text.split()) * 1.3)
@@ -286,6 +379,7 @@ class ANEService:
 
         # Regenerate summary text if needed
         if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
+            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts)")
             summary.text = await self._consolidate_facts(summary.facts, summary.text)
             # Prune old facts after consolidation
             summary.facts = summary.facts[-5:]  # Keep recent for context
@@ -327,14 +421,7 @@ class ANEService:
             for msg in turn
         ])
 
-        prompt = f"""Extract key facts from this conversation turn.
-Output as JSON array of facts, each with "type" and "content".
-Types: decision, preference, context, task, result
-
-Turn:
-{turn_text}
-
-Facts (JSON array):"""
+        prompt = self.prompt_fact_extraction.format(turn_text=turn_text)
 
         # Run inference on ANE
         response = await self._generate(prompt, max_tokens=200)
@@ -361,24 +448,12 @@ Facts (JSON array):"""
         ])
 
         if previous_summary:
-            prompt = f"""Update this summary with new facts. Preserve important context from the previous summary.
-Be concise but maintain continuity.
-
-Previous summary:
-{previous_summary}
-
-New facts:
-{facts_text}
-
-Updated summary:"""
+            prompt = self.prompt_consolidate_with_prev.format(
+                previous_summary=previous_summary,
+                facts_text=facts_text
+            )
         else:
-            prompt = f"""Consolidate these facts into a brief summary paragraph.
-Keep only the most important information. Be concise.
-
-Facts:
-{facts_text}
-
-Summary:"""
+            prompt = self.prompt_consolidate_initial.format(facts_text=facts_text)
 
         response = await self._generate(prompt, max_tokens=300)
         return response.strip()
@@ -647,6 +722,7 @@ Compressed:"""
 
         # Regenerate summary text if needed
         if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
+            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts)")
             summary.text = await self._consolidate_facts(summary.facts, summary.text)
             # Prune old facts after consolidation
             summary.facts = summary.facts[-5:]  # Keep recent for context

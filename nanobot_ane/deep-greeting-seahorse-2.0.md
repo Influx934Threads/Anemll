@@ -124,7 +124,7 @@ The ANE daemon has **zero separate storage**. It reads directly from nanobot's a
 | `session_db.py` | ✅ Production | SQLite read-only access to nanobot sessions |
 | `ws_handler.py` | ✅ Production | Turn grouping and message filtering |
 | `anectl` | ✅ Production | Control script (start/stop/status/logs) |
-| `health_check.sh` | ✅ Production | System health verification with tables |
+| `nanobot_ane_health_check.sh` | ✅ Production | System health verification with tables |
 | `nanobot_client.py` | ✅ Production | HTTP client for ANE daemon |
 
 ### Nanobot Integration (Patch System)
@@ -183,7 +183,7 @@ The ANE daemon has **zero separate storage**. It reads directly from nanobot's a
 ./nanobot_ane/anectl start
 
 # Check system health
-./nanobot_ane/health_check.sh
+./nanobot_ane/nanobot_ane_health_check.sh
 
 # View live metrics
 curl -s http://127.0.0.1:8766/metrics | jq
@@ -366,7 +366,7 @@ gh pr create --repo Anemll/Anemll --draft
 1. Continue monitoring for 1-2 more weeks
 2. Document any edge cases or issues
 3. Prepare upstream PR with comprehensive docs
-4. Include health_check.sh and patch installer in PR
+4. Include nanobot_ane_health_check.sh and patch installer in PR
 
 ---
 
@@ -382,7 +382,7 @@ nanobot_ane/
 ├── nanobot_client.py          # HTTP client
 ├── nanobot_wrapper.py         # Legacy (deprecated)
 ├── anectl                     # Control script
-├── health_check.sh            # Health verification
+├── nanobot_ane_health_check.sh            # Health verification
 ├── com.anemll.ane-daemon.plist # launchd service
 ├── nanobot_patches/
 │   ├── ane_client.py          # NEW file for nanobot
@@ -404,7 +404,7 @@ nanobot_ane/
 | INTEGRATION.md | ✅ Current | Detailed integration guide with tables |
 | NANOBOT_PATCH.md | ✅ Current | Patch management instructions |
 | PR_DRAFT.md | ✅ Current | Draft for upstream submission |
-| health_check.sh | ✅ Production | System health verification |
+| nanobot_ane_health_check.sh | ✅ Production | System health verification |
 | This file | ✅ Updated | Evolution and lessons learned |
 
 ---

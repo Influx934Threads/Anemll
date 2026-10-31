@@ -209,7 +209,7 @@ class NanobotWSHandler:
                 if self.on_turn_complete:
                     self.on_turn_complete(session.session_key, turn)
 
-                logger.info(f"Turn #{len(session.turns)} ready for compression")
+                logger.debug(f"Turn ready for compression (session-local #{len(session.turns)})")
                 i += 2
             else:
                 i += 1
@@ -241,7 +241,7 @@ class NanobotWSHandler:
         """Get or create a session state by key."""
         if session_key not in self._sessions:
             self._sessions[session_key] = SessionState(session_key=session_key)
-            logger.info(f"Created new session: {session_key[:16]}...")
+            logger.debug(f"Created ws_handler session tracking: {session_key[:16]}...")
         return self._sessions[session_key]
 
     def get_uncompressed_turns(self, session_key: str) -> list[ConversationTurn]:
@@ -261,7 +261,7 @@ class NanobotWSHandler:
         """Clear a session's state."""
         if session_key in self._sessions:
             del self._sessions[session_key]
-            logger.info(f"Cleared session: {session_key}")
+            logger.debug(f"Cleared ws_handler session tracking: {session_key[:16]}...")
 
     def get_stats(self) -> dict:
         """Get handler statistics."""

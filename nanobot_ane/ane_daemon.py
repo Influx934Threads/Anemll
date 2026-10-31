@@ -164,6 +164,7 @@ class ANEDaemon:
         self._http_app.router.add_get("/metrics", self._handle_metrics)
         # Direct compression endpoint for nanobot integration
         self._http_app.router.add_post("/compress", self._handle_compress)
+        self._http_app.router.add_post("/compress_tool", self._handle_compress_tool)
 
         self._http_runner = web.AppRunner(self._http_app)
         await self._http_runner.setup()
@@ -301,6 +302,63 @@ class ANEDaemon:
             return web.json_response({"error": f"Invalid JSON: {e}"}, status=400)
         except Exception as e:
             self.logger.error(f"Compression error: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def _handle_compress_tool(self, request: web.Request) -> web.Response:
+        """
+        POST /compress_tool - Compress tool output before storage.
+
+        Called by nanobot hook to compress large tool results (file contents,
+        command outputs) before storing in database. This happens BEFORE the
+        tool result reaches the context, saving tokens immediately.
+
+        Request body:
+            {
+                "content": str  # Tool output to compress
+            }
+
+        Response:
+            {
+                "compressed": str,  # Compressed output
+                "original_size": int,
+                "compressed_size": int,
+                "ratio": float
+            }
+        """
+        if not self.ane_service:
+            return web.json_response({"error": "ANE service not ready"}, status=503)
+
+        try:
+            data = await request.json()
+            content = data.get("content", "")
+
+            if not content:
+                return web.json_response({"error": "content required"}, status=400)
+
+            original_size = len(content)
+
+            # Compress using ANE service
+            compressed = await self.ane_service.compress_tool_result(content)
+
+            compressed_size = len(compressed)
+            ratio = original_size / compressed_size if compressed_size > 0 else 1.0
+
+            self.logger.info(
+                f"Tool compression: {original_size} → {compressed_size} chars ({ratio:.1f}x)"
+            )
+
+            return web.json_response({
+                "compressed": compressed,
+                "original_size": original_size,
+                "compressed_size": compressed_size,
+                "ratio": ratio,
+            })
+
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Invalid JSON in compress_tool request: {e}")
+            return web.json_response({"error": f"Invalid JSON: {e}"}, status=400)
+        except Exception as e:
+            self.logger.error(f"Tool compression error: {e}", exc_info=True)
             return web.json_response({"error": str(e)}, status=500)
 
     # ─── WebSocket Connection ───

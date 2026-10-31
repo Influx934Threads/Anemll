@@ -177,8 +177,8 @@ The new approach integrates with nanobot's native compaction, so summaries **REP
 Run the health check script to verify all services are running:
 
 ```bash
-./health_check.sh          # Human-readable table output
-./health_check.sh --json   # JSON output for automation
+./nanobot_ane_health_check.sh          # Human-readable table output
+./nanobot_ane_health_check.sh --json   # JSON output for automation
 ```
 
 Example output:
