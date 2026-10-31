@@ -35,6 +35,59 @@ This integration replaces nanobot's native LLM-based summarization with ANE (App
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Data Access: READ-ONLY from Nanobot's Database
+
+The ANE daemon has **no separate storage**. It reads directly from nanobot's SQLite database:
+
+```
+~/.nanobot/sessions/<workspace_hash>/sessions.sqlite3
+```
+
+### Why No Separate Storage?
+
+1. **Single Source of Truth**: Nanobot owns the conversation data. Duplicating it would create sync issues and stale data problems.
+
+2. **Stateless Compression**: ANE daemon is a pure function: `messages → summary`. It doesn't need to persist summaries because:
+   - Summaries are held in memory (`session_summaries` dict) for instant retrieval
+   - When nanobot requests a summary via `POST /compress`, it gets returned and nanobot persists it
+   - If ANE daemon restarts, it simply re-reads nanobot's DB and rebuilds summaries on next poll
+
+3. **No Write Conflicts**: By being read-only, ANE daemon can never corrupt nanobot's data. The integration is safely additive.
+
+4. **Simpler Recovery**: If anything goes wrong, just restart ANE daemon. It has no state to recover - it rebuilds from nanobot's authoritative data.
+
+### How It Works
+
+**`session_db.py`** provides `SessionDBReader`:
+
+```python
+# Finds nanobot's SQLite database
+db_path = ~/.nanobot/sessions/<workspace_hash>/sessions.sqlite3
+
+# Reads messages for a session (READ-ONLY)
+messages = reader.get_session_messages(session_key)
+
+# Polls for new turns every 10 seconds
+new_turns = reader.get_turns_since(last_seen_id)
+```
+
+### Data Flow
+
+```
+┌─────────────────┐     READ-ONLY      ┌─────────────────┐
+│                 │ ◄───────────────── │                 │
+│  Nanobot SQLite │                    │   ANE Daemon    │
+│  (sessions.db)  │                    │  (in-memory)    │
+│                 │ ───────────────►   │                 │
+└─────────────────┘   POST /compress   └─────────────────┘
+        │              returns summary         │
+        │                                      │
+        ▼                                      ▼
+   Authoritative                         Ephemeral
+   Persistent                            Rebuilt on restart
+   Owned by nanobot                      No persistence needed
+```
+
 ## Integration Touchpoints
 
 ### 1. Nanobot Side (2 files modified)
