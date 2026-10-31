@@ -2,6 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: Fork Workflow - READ FIRST
+
+**NEVER interact with the main repo (`Anemll/Anemll`) unless explicitly instructed.**
+
+This is a fork. All git operations go to the fork:
+
+```bash
+# CORRECT - always use fork
+git push fork main
+gh pr create --repo Influx934Threads/Anemll  # if creating PR in fork
+
+# WRONG - never do this without explicit permission
+git push origin main
+gh pr create --repo Anemll/Anemll
+gh pr edit/close/comment --repo Anemll/Anemll
+```
+
+**Remotes:**
+- `origin` = `Anemll/Anemll` (upstream) - DO NOT PUSH OR CREATE PRs HERE
+- `fork` = `Influx934Threads/Anemll` - USE THIS FOR ALL OPERATIONS
+
+When user says "push" or "create PR", always use the **fork** remote unless they explicitly say "upstream" or "main repo".
+
 ## Project Overview
 
 ANEMLL (pronounced "animal") is an open-source project for accelerating Large Language Models (LLMs) on Apple Neural Engine (ANE). The project converts Hugging Face models to CoreML format for on-device inference on Apple devices.
