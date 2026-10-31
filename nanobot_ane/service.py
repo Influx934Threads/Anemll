@@ -280,7 +280,7 @@ class ANEService:
 
         # Regenerate summary text if needed
         if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
-            summary.text = await self._consolidate_facts(summary.facts)
+            summary.text = await self._consolidate_facts(summary.facts, summary.text)
             # Prune old facts after consolidation
             summary.facts = summary.facts[-5:]  # Keep recent for context
 
@@ -315,9 +315,9 @@ class ANEService:
 
     async def _extract_facts(self, turn: list[dict]) -> list[dict]:
         """Extract key facts from a conversation turn"""
-        # Format the turn for the model
+        # Format the turn for the model (2000 chars per message to capture code context)
         turn_text = "\n".join([
-            f"{msg.get('role', 'unknown')}: {msg.get('content', '')[:500]}"
+            f"{msg.get('role', 'unknown')}: {msg.get('content', '')[:2000]}"
             for msg in turn
         ])
 
@@ -347,14 +347,26 @@ Facts (JSON array):"""
         # Fallback: create a simple fact
         return [{"type": "context", "content": turn_text[:200]}]
 
-    async def _consolidate_facts(self, facts: list[dict]) -> str:
-        """Consolidate multiple facts into a coherent summary"""
+    async def _consolidate_facts(self, facts: list[dict], previous_summary: str = "") -> str:
+        """Consolidate multiple facts into a coherent summary, preserving previous context"""
         facts_text = "\n".join([
             f"- [{f.get('type', 'info')}] {f.get('content', '')}"
             for f in facts
         ])
 
-        prompt = f"""Consolidate these facts into a brief summary paragraph.
+        if previous_summary:
+            prompt = f"""Update this summary with new facts. Preserve important context from the previous summary.
+Be concise but maintain continuity.
+
+Previous summary:
+{previous_summary}
+
+New facts:
+{facts_text}
+
+Updated summary:"""
+        else:
+            prompt = f"""Consolidate these facts into a brief summary paragraph.
 Keep only the most important information. Be concise.
 
 Facts:
@@ -371,10 +383,11 @@ Summary:"""
             raise RuntimeError("ANE service not started - call start() first")
 
         # Use ANEInference for actual generation on Neural Engine
+        # Greedy sampling (temperature=0) for deterministic compression output
         return await self._inference.generate(
             prompt=prompt,
             max_tokens=max_tokens,
-            temperature=0.3,  # Lower temperature for compression tasks
+            temperature=0.0,
         )
 
     # ─── PUBLIC API ───
@@ -414,11 +427,13 @@ Summary:"""
         if len(content) < self.tool_compression_threshold:
             return content
 
+        # Limit input size to 4000 chars
+        truncated_content = content[:4000]
         prompt = f"""Compress this tool output to its essential information.
 Keep key data, remove redundancy. Be concise but complete.
 
 Tool output:
-{content[:4000]}  # Limit input size
+{truncated_content}
 
 Compressed:"""
 

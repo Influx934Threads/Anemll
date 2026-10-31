@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 def make_causal_mask(context_length: int, start_pos: int = 0) -> np.ndarray:
-    """Create causal attention mask."""
-    mask = np.zeros((1, 1, context_length, context_length), dtype=np.float16)
-    for i in range(context_length):
-        for j in range(context_length):
-            if j > i:
-                mask[0, 0, i, j] = -np.inf
-    return mask
+    """Create causal attention mask using numpy broadcasting (O(n) not O(n²))."""
+    # Create row and column indices
+    rows = np.arange(context_length).reshape(-1, 1)
+    cols = np.arange(context_length).reshape(1, -1)
+    # Mask where column > row (future positions)
+    mask = np.where(cols > rows, -np.inf, 0.0).astype(np.float16)
+    return mask.reshape(1, 1, context_length, context_length)
 
 
 class ANEInference:
