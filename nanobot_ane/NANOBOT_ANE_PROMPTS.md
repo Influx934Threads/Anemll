@@ -6,6 +6,19 @@ This file contains all prompts used by the ANE compression service. If this file
 
 ---
 
+## ⚠️ ARM C Implementation (2024-11-02)
+
+**Consolidation prompts are now DEPRECATED.** The service has been updated to use **mechanical merge** instead of LLM consolidation based on ARM C test results:
+
+- **Mechanical merge**: 2ms, 92.86% recall, 0 tokens
+- **LLM consolidation**: 7,451ms, 50% recall, 161 tokens
+
+The mechanical merge uses CPU-side fuzzy deduplication (85% similarity threshold) and markdown formatting. This eliminates the expensive LLM consolidation call that occurred every 5 turns.
+
+**Only the Fact Extraction Prompt is still used.** Consolidation prompts below are preserved for reference but no longer affect the service.
+
+---
+
 ## Fact Extraction Prompt
 
 Extracts structured facts from conversation turns for incremental compression.

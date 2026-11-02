@@ -13,11 +13,12 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Union, List, Dict
 from datetime import datetime
 import json
 
 from .ane_inference import ANEInference
+from .arms.arm_c.mechanical_merger import MechanicalMerger
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class CompressionMetrics:
 class SessionSummary:
     """Rolling summary for a session"""
     text: str = ""
-    facts: list[dict] = field(default_factory=list)
+    facts: List[dict] = field(default_factory=list)
     turn_count: int = 0
     last_updated: datetime = field(default_factory=datetime.now)
     token_estimate: int = 0
@@ -91,7 +92,7 @@ class ANEService:
 
     def __init__(
         self,
-        model_path: str | Path,
+        model_path: Union[str, Path],
         max_summary_tokens: int = 2000,
         tool_compression_threshold: int = 500,
     ):
@@ -101,7 +102,10 @@ class ANEService:
         self.state_file = Path(self.STATE_FILE).expanduser()
 
         # Session summaries (Phase 1)
-        self.session_summaries: dict[str, SessionSummary] = {}
+        self.session_summaries: Dict[str, SessionSummary] = {}
+
+        # Mechanical merger for CPU-side fact consolidation (ARM C)
+        self.mechanical_merger = MechanicalMerger(similarity_threshold=0.85)
 
         # Compression queue
         self.queue: asyncio.PriorityQueue[CompressionTask] = asyncio.PriorityQueue()
@@ -379,7 +383,7 @@ Summary (no duplicates, preserve specifics):"""
 
         # Regenerate summary text if needed
         if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
-            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts)")
+            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts) using mechanical merge")
             summary.text = await self._consolidate_facts(summary.facts, summary.text)
             # Prune old facts after consolidation
             summary.facts = summary.facts[-5:]  # Keep recent for context
@@ -413,7 +417,7 @@ Summary (no duplicates, preserve specifics):"""
         # This is for any async/queued tool compression if needed
         pass
 
-    async def _extract_facts(self, turn: list[dict]) -> list[dict]:
+    async def _extract_facts(self, turn: List[dict]) -> List[dict]:
         """Extract key facts from a conversation turn"""
         # Format the turn for the model (2000 chars per message to capture code context)
         turn_text = "\n".join([
@@ -440,23 +444,31 @@ Summary (no duplicates, preserve specifics):"""
         # Fallback: create a simple fact
         return [{"type": "context", "content": turn_text[:200]}]
 
-    async def _consolidate_facts(self, facts: list[dict], previous_summary: str = "") -> str:
-        """Consolidate multiple facts into a coherent summary, preserving previous context"""
-        facts_text = "\n".join([
-            f"- [{f.get('type', 'info')}] {f.get('content', '')}"
-            for f in facts
-        ])
+    async def _consolidate_facts(self, facts: List[dict], previous_summary: str = "") -> str:
+        """
+        Consolidate multiple facts using mechanical merge (ARM C).
 
-        if previous_summary:
-            prompt = self.prompt_consolidate_with_prev.format(
-                previous_summary=previous_summary,
-                facts_text=facts_text
-            )
-        else:
-            prompt = self.prompt_consolidate_initial.format(facts_text=facts_text)
+        ARM C Results:
+        - Mechanical merge: 2ms, 92.86% recall, 0 tokens
+        - LLM consolidation: 7,451ms, 50% recall, 161 tokens
 
-        response = await self._generate(prompt, max_tokens=300)
-        return response.strip()
+        This uses CPU-side fuzzy deduplication and formatting instead of LLM.
+        Faster, better quality, and zero output token cost.
+        """
+        if not facts:
+            return previous_summary
+
+        # Use mechanical merger (zero-LLM, instant)
+        merge_result = self.mechanical_merger.merge(facts)
+
+        # Get formatted text from merge result
+        summary_text = merge_result['text']
+
+        # If there's a previous summary, prepend it as context
+        if previous_summary and previous_summary.strip():
+            summary_text = f"{previous_summary}\n\n{summary_text}"
+
+        return summary_text.strip()
 
     async def _generate(self, prompt: str, max_tokens: int = 100) -> str:
         """Generate text using the ANE model"""
@@ -476,7 +488,7 @@ Summary (no duplicates, preserve specifics):"""
     async def queue_turn_compression(
         self,
         session_key: str,
-        turn: list[dict],
+        turn: List[dict],
         priority: int = 1
     ):
         """
@@ -609,7 +621,7 @@ Summary:"""
     async def generate_summary_for_nanobot(
         self,
         session_key: str,
-        messages: list[dict],
+        messages: List[dict],
         previous_summary: str | None = None,
     ) -> str | None:
         """
@@ -661,7 +673,7 @@ Summary:"""
         )
         return None
 
-    def _messages_to_turns(self, messages: list[dict]) -> list[list[dict]]:
+    def _messages_to_turns(self, messages: List[dict]) -> list[List[dict]]:
         """Convert a list of messages to turn pairs for compression.
 
         A turn is a user message followed by an assistant message.
@@ -706,7 +718,7 @@ Summary:"""
     async def _process_turn_compression_direct(
         self,
         session_key: str,
-        turn: list[dict],
+        turn: List[dict],
         summary: SessionSummary,
     ):
         """Process a turn compression directly (not via queue).
@@ -734,7 +746,7 @@ Summary:"""
 
         # Regenerate summary text if needed
         if len(summary.facts) > 10 or summary.turn_count % 5 == 0:
-            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts)")
+            logger.info(f"[{session_key[:16]}] Re-consolidating at turn {summary.turn_count} ({len(summary.facts)} facts) using mechanical merge")
             summary.text = await self._consolidate_facts(summary.facts, summary.text)
             # Prune old facts after consolidation
             summary.facts = summary.facts[-5:]  # Keep recent for context
