@@ -24,7 +24,36 @@ Tests and validates mechanical merge consolidation as replacement for LLM consol
 - **`convert_nanobot_conversation.py`** - Convert nanobot JSONL conversations to test format
 - **`test_with_nanobot_conversation.sh`** - Helper script to test with real nanobot conversations
 
-## Testing with Real Nanobot Conversations
+### Production Testing Tools
+
+- **`monitor_ane_consolidation.py`** - Real-time monitor for ANE consolidation events
+- **`TESTING_GUIDE.md`** - Step-by-step guide to test mechanical merge in production
+
+## Testing Mechanical Merge in Production
+
+### Real-time Monitoring (During Live Conversation)
+
+Monitor consolidation as it happens during a nanobot conversation:
+
+```bash
+cd /Users/agundez/Build/Anemll/nanobot_ane/arms/arm_c
+
+# Watch for consolidation events in real-time
+python3 monitor_ane_consolidation.py --watch
+
+# Or check current state snapshot
+python3 monitor_ane_consolidation.py
+```
+
+Then have a conversation with nanobot (5-10 turns). The monitor will show:
+- When consolidation happens (turn 5, or when >10 facts)
+- Whether it's mechanical merge (structured markdown) or LLM (prose)
+- Facts extracted and deduplicated
+- Real-time consolidation output
+
+**See `TESTING_GUIDE.md` for complete testing instructions.**
+
+## Testing with Past Nanobot Conversations
 
 ### Quick Start
 
