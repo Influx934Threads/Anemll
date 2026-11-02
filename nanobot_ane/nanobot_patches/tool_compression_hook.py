@@ -3,12 +3,18 @@ Nanobot hook to compress tool outputs before storage using ANE.
 
 This reduces context consumption by compressing large tool results
 (file contents, command outputs, etc.) before they're stored in the database.
+
+CURRENTLY DISABLED: LLM-based compression doesn't work (Qwen3-1.7B copies inputs verbatim).
+See RTK_PYTHON_PLAN.md for alternative approaches using rule-based compression.
 """
 
 import aiohttp
 import logging
 
 logger = logging.getLogger(__name__)
+
+# DISABLED: Set to True to enable LLM-based compression (not recommended, doesn't work)
+COMPRESSION_ENABLED = False
 
 ANE_DAEMON_URL = "http://127.0.0.1:8766"
 TOOL_COMPRESSION_THRESHOLD = 1000  # Compress outputs > 1000 chars
@@ -20,7 +26,14 @@ async def compress_tool_output(tool_result: str) -> str:
 
     Called by nanobot before storing tool results.
     Falls back to original if ANE unavailable or compression fails.
+
+    CURRENTLY DISABLED: Returns original content without compression.
+    Set COMPRESSION_ENABLED = True to re-enable (not recommended).
     """
+    # DISABLED: Return original content without compression
+    if not COMPRESSION_ENABLED:
+        return tool_result
+
     # Skip small outputs
     if len(tool_result) < TOOL_COMPRESSION_THRESHOLD:
         return tool_result
