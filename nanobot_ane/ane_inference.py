@@ -9,7 +9,7 @@ import asyncio
 import logging
 import glob
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, List
 import sys
 
 import torch
@@ -38,7 +38,7 @@ class ANEInference:
     chat.py for proper ANE execution.
     """
 
-    def __init__(self, model_path: str | Path):
+    def __init__(self, model_path: Union[str, Path]):
         self.model_path = Path(model_path).expanduser()
         self.meta_path = self.model_path / "meta.yaml"
 
@@ -71,7 +71,7 @@ class ANEInference:
         self._loaded = True
         logger.info("ANE model loaded successfully")
 
-    def _load_model(self, path: Path, function_name: str | None = None):
+    def _load_model(self, path: Path, function_name: Optional[str] = None):
         """Load a CoreML model following ANEMLL patterns."""
         import coremltools as ct
 
@@ -142,7 +142,7 @@ class ANEInference:
         # Initialize state and mask
         self._init_state()
 
-    def _find_model_file(self, model_dir: Path, component: str) -> Path | None:
+    def _find_model_file(self, model_dir: Path, component: str) -> Optional[Path]:
         """Find model file for a component (embeddings, lm_head)."""
         patterns = [
             f"*{component}*.mlmodelc",
@@ -223,7 +223,7 @@ class ANEInference:
         prompt: str,
         max_tokens: int = 100,
         temperature: float = 0.7,
-        stop_tokens: Optional[list[int]] = None
+        stop_tokens: Optional[List[int]] = None
     ) -> str:
         """
         Generate text from a prompt using ANE.
@@ -400,7 +400,7 @@ class ANEInference:
         prompt: str,
         max_tokens: int,
         temperature: float,
-        stop_tokens: Optional[list[int]]
+        stop_tokens: Optional[List[int]]
     ) -> str:
         """Synchronous generation (runs in executor)"""
 
@@ -465,11 +465,11 @@ class ANEInferencePool:
     this pool manages multiple inference instances.
     """
 
-    def __init__(self, model_path: str | Path, pool_size: int = 2):
+    def __init__(self, model_path: Union[str, Path], pool_size: int = 2):
         self.model_path = Path(model_path)
         self.pool_size = pool_size
-        self._instances: list[ANEInference] = []
-        self._semaphore: asyncio.Semaphore | None = None
+        self._instances: List[ANEInference] = []
+        self._semaphore: Optional[asyncio.Semaphore] = None
         self._current_idx = 0
 
     async def start(self):

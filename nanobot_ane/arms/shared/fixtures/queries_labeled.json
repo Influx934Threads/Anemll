@@ -1,0 +1,60 @@
+[
+  {
+    "query": "What is the timeout configuration?",
+    "relevant_turns": [
+      0,
+      1,
+      2
+    ],
+    "relevant_facts": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "query": "Which authentication method are we using?",
+    "relevant_turns": [
+      6,
+      7
+    ],
+    "relevant_facts": [
+      12,
+      13
+    ]
+  },
+  {
+    "query": "What are the database settings?",
+    "relevant_turns": [
+      2,
+      3
+    ],
+    "relevant_facts": [
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "query": "Tell me about rate limiting",
+    "relevant_turns": [
+      4,
+      5
+    ],
+    "relevant_facts": [
+      8,
+      9
+    ]
+  },
+  {
+    "query": "What retry policy is configured?",
+    "relevant_turns": [
+      5,
+      6
+    ],
+    "relevant_facts": [
+      10,
+      11
+    ]
+  }
+]

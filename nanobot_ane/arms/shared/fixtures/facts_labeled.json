@@ -1,0 +1,1602 @@
+[
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 0
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 0
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 1
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 1
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 2
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 2
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 3
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 3
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 4
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 4
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 5
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 5
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 6
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 6
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 7
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 7
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 8
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 8
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 9
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 9
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 10
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 10
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 11
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 11
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 12
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 12
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 13
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 13
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 14
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 14
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 15
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 15
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 16
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 16
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 17
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 17
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 18
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 18
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 19
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 19
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 20
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 20
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 21
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 21
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 22
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 22
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 23
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 23
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 24
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 24
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 25
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 25
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 26
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 26
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 27
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 27
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 28
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 28
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 29
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 29
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 30
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 30
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 31
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 31
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 32
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 32
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 33
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 33
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 34
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 34
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 35
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 35
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 36
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 36
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 37
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 37
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 38
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 38
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 39
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 39
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 40
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 40
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 41
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 41
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 42
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 42
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 43
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 43
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 44
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 44
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 45
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 45
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 46
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 46
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 47
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 47
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 48
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 48
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 49
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 49
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 50
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 50
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 51
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 51
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 52
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 52
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 53
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 53
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 54
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 54
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 55
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 55
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 56
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 56
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 57
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 57
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 58
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 58
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 59
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 59
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 60
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 60
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 61
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 61
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 62
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 62
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 63
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 63
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 64
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 64
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 65
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 65
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 66
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 66
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 67
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 67
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 68
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 68
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 69
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 69
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 70
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 70
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 71
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 71
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 72
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 72
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 73
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 73
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 74
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 74
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 75
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 75
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 76
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 76
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 77
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 77
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 78
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 78
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 79
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 79
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 80
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 80
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 81
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 81
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 82
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 82
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 83
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 83
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 84
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 84
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 85
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 85
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 86
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 86
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 87
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 87
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 88
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 88
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 89
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 89
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 90
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 90
+  },
+  {
+    "type": "threshold",
+    "content": "maximum file size is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 91
+  },
+  {
+    "type": "requirement",
+    "content": "system must support GraphQL",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 91
+  },
+  {
+    "type": "decision",
+    "content": "chose TLS 1.3 over HTTP/2",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 92
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 92
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 93
+  },
+  {
+    "type": "threshold",
+    "content": "maximum requests is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 93
+  },
+  {
+    "type": "requirement",
+    "content": "system must support TLS 1.3",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 94
+  },
+  {
+    "type": "decision",
+    "content": "chose HTTP/2 over gRPC",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 94
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 95
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 95
+  },
+  {
+    "type": "threshold",
+    "content": "maximum memory is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 96
+  },
+  {
+    "type": "requirement",
+    "content": "system must support HTTP/2",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 96
+  },
+  {
+    "type": "decision",
+    "content": "chose gRPC over GraphQL",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 97
+  },
+  {
+    "type": "configuration",
+    "content": "timeout set to 30 seconds",
+    "entities": [
+      "timeout"
+    ],
+    "turn_id": 97
+  },
+  {
+    "type": "preference",
+    "content": "user prefers debug mode",
+    "entities": [
+      "preference"
+    ],
+    "turn_id": 98
+  },
+  {
+    "type": "threshold",
+    "content": "maximum connections is 100 MB",
+    "entities": [
+      "threshold"
+    ],
+    "turn_id": 98
+  },
+  {
+    "type": "requirement",
+    "content": "system must support gRPC",
+    "entities": [
+      "requirement"
+    ],
+    "turn_id": 99
+  },
+  {
+    "type": "decision",
+    "content": "chose GraphQL over TLS 1.3",
+    "entities": [
+      "decision"
+    ],
+    "turn_id": 99
+  }
+]
