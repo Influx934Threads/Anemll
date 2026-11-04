@@ -64,23 +64,68 @@ and it will take effect immediately.
 - Generates hallucinations when forced into structures
 - Quality loss outweighs any token savings
 
+### Budget 100 Tuning Results
+
+After initial results showed quality ceiling, we tested 6 configurations to find optimal balance:
+
+| Config | Max Tokens | Avg Tokens | Quality | Hallucinations | Savings |
+|--------|-----------|-----------|---------|----------------|---------|
+| **baseline** | - | **251.0** | **0.72** | **0%** | - |
+| Budget 60 | 60 | 102.4 | 0.55 | 12.0% | 59.2% |
+| Budget 70 | 70 | 111.0 | 0.54 | 13.3% | 55.8% |
+| Budget 80 | 80 | 127.6 | 0.58 | 6.7% | 49.2% |
+| Budget 90 | 90 | 131.0 | 0.51 | 17.5% | 47.8% |
+| **Budget 100** | **100** | **153.0** | **0.62** | **0.0%** | **39.0%** |
+| Budget 125 | 125 | 170.4 | 0.37 | 47.0% | 32.1% |
+
+**Sweet spot found**: Budget 100 (moderate + preserve details)
+- 153 tokens average (39% savings)
+- 0.62 quality (vs 0.72 baseline)
+- 0% hallucinations
+- Only 14% quality drop
+
+### Real-World Validation
+
+Tested Budget 100 on actual nanobot conversations:
+
+**Results across multiple conversations**:
+- **Turn 1**: 175 → 106 tokens (39.4% savings)
+- **Turns 1-3 average**: 268.7 → 149.3 tokens (44.4% savings)
+
+**Quality assessment**:
+- ✅ Preserves all critical information (file paths, model names, user details)
+- ✅ Maintains numbers, percentages, and measurements
+- ✅ Keeps specific names and technical details
+- ✅ Zero hallucinations on real data
+- ⚠️ Drops verbose action planning and ephemeral metadata tags
+
+**Example comparison**:
+- **Baseline** (175 tokens): Includes [durable]/[ephemeral] tags, full action plans
+- **Budget 100** (106 tokens): Preserved user info, project details, model name (Ternary-Bonsai-2-27B-PQ2_0), file paths (~/.nanobot/Preferences/ownCloud), goal, status
+
 ### Recommendation
 
-✅ **KEEP CURRENT FACT EXTRACTION PROMPT**
+**TWO VIABLE OPTIONS**:
 
-**Do NOT attempt token reduction**:
-- Current 251 tokens/turn is optimal for this model
-- Any reduction hurts quality or causes hallucinations
-- Natural language baseline outperforms all structured variants
+✅ **Option 1: Keep Baseline (Maximum Quality)**
+- 251 tokens/turn
+- 0.72 quality, 0% hallucinations
+- Best for: Situations requiring highest quality preservation
+- **Integration**: No changes needed to `service.py`
 
-**Integration**: No changes needed to `service.py`
+✅ **Option 2: Adopt Budget 100 (Quality/Cost Balance)**
+- 153 tokens/turn (39% savings)
+- 0.62 quality, 0% hallucinations
+- Preserves all critical facts in real-world testing
+- Best for: Production use where cost savings matter
+- **Integration**: Update fact extraction prompt with Budget 100 variant
 
 ### Cost Analysis
 
 At ANE's 36.2x cost ratio:
-- 251 output tokens ≈ 9,086 input token equivalent
-- But there's NO viable reduction path without quality loss
-- Accept this as the optimal cost for quality
+- **Baseline**: 251 output tokens ≈ 9,086 input token equivalent
+- **Budget 100**: 153 output tokens ≈ 5,539 input token equivalent
+- **Savings**: 3,547 input token equivalents per turn (39% reduction)
 
 ---
 
@@ -204,11 +249,12 @@ Break-even points (queries per day where generative stops being cost-effective):
 
 ### ARM D Conclusion
 
-**Token budgeting FAILS on ANE**:
+**Token budgeting shows QUALITY/COST TRADE-OFF**:
 - Natural language prompts are optimal
-- Structured formats hurt quality
-- Accept 251 tokens/turn as necessary cost
-- **No integration needed** - keep current prompt
+- Structured formats hurt quality and cause hallucinations
+- **Budget 100 found as viable option**: 39% savings with acceptable 14% quality drop
+- Real-world testing validates Budget 100 preserves critical information
+- **Decision**: Choose between baseline (max quality) or Budget 100 (cost savings)
 
 ### ARM E Conclusion
 
@@ -222,11 +268,22 @@ Break-even points (queries per day where generative stops being cost-effective):
 
 ## Integration Decisions
 
-### ARM D: ✅ DECIDED - No Changes
+### ARM D: 🔀 DECISION POINT - Two Viable Options
 
-**Decision**: Keep current fact extraction prompt
-**Reason**: Baseline outperforms all alternatives
-**Action**: Document findings, no code changes
+**Option 1: Keep Baseline** ✅
+- **Reason**: Maximum quality (0.72) with zero hallucinations
+- **Action**: No code changes to `service.py`
+- **Best for**: Situations requiring highest quality
+
+**Option 2: Adopt Budget 100** ✅
+- **Reason**: 39% cost savings with acceptable quality (0.62)
+- **Action**: Update fact extraction prompt with Budget 100 variant
+- **Best for**: Production use where cost savings matter
+- **Validation**: Real-world testing confirms critical information preservation
+
+**Files created**:
+- `tune_d1_strict.py` - Parameter tuning script
+- `test_budget100_real.py` - Real-world validation script
 
 ### ARM E: ⏳ PENDING - Analyze Usage
 
@@ -244,8 +301,10 @@ Break-even points (queries per day where generative stops being cost-effective):
 - `arms/results/arm_e_retrieval_results.json` - Full ARM E data
 
 ### Code
-- `arms/arm_d/test_token_budget.py` - ✅ Executed successfully
+- `arms/arm_d/test_token_budget.py` - ✅ Executed successfully (initial 6 variants)
 - `arms/arm_d/prompt_variants.py` - 6 variants tested
+- `arms/arm_d/tune_d1_strict.py` - ✅ Budget tuning (6 configurations)
+- `arms/arm_d/test_budget100_real.py` - ✅ Real-world validation on nanobot conversations
 - `arms/arm_e/test_generative_retrieval.py` - ✅ Executed successfully (with context fix)
 
 ---
