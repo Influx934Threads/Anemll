@@ -1,5 +1,6 @@
 """Prompt variants for token budget optimization"""
 import sys
+import asyncio
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -30,11 +31,11 @@ class PromptVariant:
         """Helper to measure inference"""
         input_tokens = self.token_counter.count(prompt)
 
-        output = self.inference.generate(
+        output = asyncio.run(self.inference.generate(
             prompt=prompt,
             max_tokens=max_tokens,
             temperature=0.0
-        )
+        ))
 
         output_tokens = self.token_counter.count(output)
 
