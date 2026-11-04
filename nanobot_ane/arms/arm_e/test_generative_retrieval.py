@@ -39,7 +39,8 @@ def run_arm_e(model_path: str, quick: bool = False):
 
     # Load test data
     queries = fixtures.get_queries()
-    conversation = fixtures.get_conversation("medium")
+    # Use small conversation to avoid context overflow (2048 limit)
+    conversation = fixtures.get_conversation("small")
 
     if quick:
         queries = queries[:2]
@@ -47,9 +48,9 @@ def run_arm_e(model_path: str, quick: bool = False):
     print(f"Testing {len(queries)} queries on conversation with {len(conversation)//2} turns")
     print()
 
-    # Prepare turns
+    # Prepare turns - limit to 10 turns max to avoid context overflow
     turns = []
-    for i in range(0, len(conversation), 2):
+    for i in range(0, min(len(conversation), 20), 2):
         if i + 1 < len(conversation):
             turns.append({
                 'id': i // 2,
