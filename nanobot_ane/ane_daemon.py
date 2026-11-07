@@ -28,7 +28,9 @@ from nanobot_ane.ws_handler import NanobotWSHandler, ConversationTurn
 from nanobot_ane.session_db import SessionDBReader
 
 # Configuration
-DEFAULT_MODEL_PATH = "~/Build/Anemll/models/qwen3-1.7b-ctx2048"
+# Updated to 4B model for Budget 100 deployment (2026-11-06)
+# 4B achieves 100% recall vs 1.7B's 90-97% recall
+DEFAULT_MODEL_PATH = "~/Build/Anemll/models/qwen3-4b-ctx2048"
 DEFAULT_WS_URL = "ws://127.0.0.1:8765"
 DEFAULT_LOG_DIR = "~/.nanobot/logs"
 DEFAULT_CONTEXT_PORT = 8766  # HTTP server for context injection

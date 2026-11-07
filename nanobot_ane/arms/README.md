@@ -2,9 +2,112 @@
 
 Comprehensive investigation of Apple ANE characteristics and optimization strategies, inspired by AMD XDNA2 NPU findings documented in `~/Build/NPU-BEST-FIT-ENVELOPE.md`.
 
+## 🚀 BREAKTHROUGH FINDING: Budget 100 DEPLOYED TO PRODUCTION
+
+**STATUS**: ✅ **LIVE IN PRODUCTION** (deployed 2026-11-06 19:53 UTC)
+
+**FINAL VALIDATED CONFIGURATION FOR 4B ANE:**
+- ✅ **Budget 100 per-turn extraction** achieves **100% recall** + **~42% token savings**
+- ✅ **Validated across 3 seeds** (101, 202, 303) with **perfect consistency**
+- ✅ **DEPLOYED and running** - daemon PID 1225, metrics at http://127.0.0.1:8766/metrics
+- ✅ **Simpler and more reliable** than chunk-size optimization
+
+**Key Discovery:** The ≤100 token budget constraint prevents model verbosity while maintaining perfect recall. Chunk-size optimization adds no value - Budget 100 alone is sufficient.
+
+**Current Status**:
+```bash
+# View live metrics
+curl -s http://127.0.0.1:8766/metrics | jq '{model, configuration, compression_ratio, avg_extraction_tokens}'
+
+# Expected output (after new compressions):
+# {
+#   "model": "qwen3-4b-ctx2048",
+#   "configuration": "budget_100",
+#   "compression_ratio": 11.6,
+#   "avg_extraction_tokens": ~110
+# }
+```
+
+## ⚠️ CRITICAL REQUIREMENT: Perfect Recall + Model Selection
+
+**Perfect recall (100%) is a non-negotiable requirement for fact extraction.**
+- 1.7B model FAILS this requirement (90-97% recall - misses 3-10% of facts)
+- 4B model MEETS this requirement (100% recall with Budget 100)
+- **Migration to 4B model + Budget 100 is REQUIRED for production use**
+
+See [Key Findings](#key-findings--reports) below for detailed analysis.
+
 ## Overview
 
 This investigation consists of 5 independent test arms (A-E), each exploring a specific optimization strategy validated on AMD's NPU and adapted for Apple ANE.
+
+## Key Findings & Reports
+
+### Executive Summary Documents
+
+📊 **[FINAL_CHUNK_SIZE_FINDINGS.md](arm_d/FINAL_CHUNK_SIZE_FINDINGS.md)** - Complete analysis with Budget 100 discovery
+- **BREAKTHROUGH**: Budget 100 achieves 100% recall + 42% savings (validated 3/3 seeds)
+- **Critical**: Chunk-size optimization adds no value - Budget 100 alone is sufficient
+- **4B + Budget 100 is the production solution** for ANE
+- **9B GPU + chunk2** achieves 36.9% savings for GPU backend
+
+📊 **[MODEL_SIZE_COMPARISON.md](arm_d/MODEL_SIZE_COMPARISON.md)** - Cross-model analysis (1.7B vs 4B vs 9B)
+- Perfect recall requirement established as success criteria
+- 4B is the only ANE model that meets perfect recall requirement
+- **Budget 100 is optimal for 4B** (~42% savings, 100% recall, 3/3 seeds validated)
+- Chunk-size optimization unreliable (inconsistent recall across seeds)
+
+📊 **[ANE_VS_GPU_CHUNK_SIZE_COMPARISON.md](arm_d/ANE_VS_GPU_CHUNK_SIZE_COMPARISON.md)** - Platform comparison
+- Model size dependency: effectiveness scales with capacity
+- 1.7B produces 84% more tokens than 9B (verbosity issue)
+- Chunk-size optimization not viable on 1.7B ANE
+
+### Cross-Pollination Analysis
+
+📊 **[CROSS_POLLINATION_AMD_NPU.md](CROSS_POLLINATION_AMD_NPU.md)** - AMD NPU findings validation
+- AMD's chunk-size optimization findings transfer to large models (9B)
+- Do NOT transfer to small models (1.7B)
+- Model capacity is the determining factor
+
+### ARM D: Token Budgeting & Chunk-Size Results
+
+All ARM D findings are in [`arm_d/`](arm_d/):
+
+| Document | Description | Key Finding |
+|----------|-------------|-------------|
+| **[FINAL_CHUNK_SIZE_FINDINGS.md](arm_d/FINAL_CHUNK_SIZE_FINDINGS.md)** | Complete analysis + Budget 100 discovery | **Budget 100: 42% savings, 100% recall** |
+| **[MODEL_SIZE_COMPARISON.md](arm_d/MODEL_SIZE_COMPARISON.md)** | Model comparison | 4B + Budget 100 validated |
+| **[CHUNK_SIZE_MULTISEED_RESULTS.md](arm_d/CHUNK_SIZE_MULTISEED_RESULTS.md)** | GPU validation | chunk2 saves 36.9% |
+| **[ANE_VS_GPU_CHUNK_SIZE_COMPARISON.md](arm_d/ANE_VS_GPU_CHUNK_SIZE_COMPARISON.md)** | Platform comparison | Model size dependency |
+| **[BUDGET_100_VALIDATION.md](arm_d/BUDGET_100_VALIDATION.md)** | Budget constraint validation | Budget 100 > chunk-size optimization |
+
+### Production Recommendations (FINAL - VALIDATED)
+
+**For ANE Production:**
+1. ❌ **REJECT 1.7B** - Does not meet perfect recall requirement (90-97% recall)
+2. ✅ **DEPLOY 4B + Budget 100** - **100% recall, ~42% token savings** (VALIDATED 3/3 seeds)
+3. ❌ **REJECT chunk-size optimization** - Adds no value, inconsistent across seeds
+
+**For GPU Production:**
+1. ✅ **DEPLOY 9B + chunk2** - 100% recall, 36.9% savings (validated)
+
+**Implementation Details:**
+```python
+# 4B ANE Production Configuration
+prompt = f"""Extract facts from this conversation turn. Target ≤100 tokens.
+Be concise but clear. Abbreviate where unambiguous.
+Preserve: numbers, percentages, file paths, specific names, measurements.
+
+Turn:
+{turn_text}
+
+Facts (≤100 tokens):"""
+
+max_tokens = 120  # 20% buffer for safety
+temperature = 0.0
+```
+
+See individual reports for detailed implementation guidance.
 
 ## Quick Start
 

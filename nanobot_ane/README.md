@@ -7,8 +7,8 @@ Background context compression using Apple Neural Engine (ANE) for nanobot agent
 ```
 ┌─────────────────────────────────────┐     ┌─────────────────────────────────┐
 │          GPU Model Daemon           │     │           ANE Daemon            │
-│      Bonsai 9B @ 31 tok/s           │     │      Qwen3-1.7B @ 20 tok/s      │
-│      http://localhost:8080/v1       │     │      Background compression     │
+│      Bonsai 9B @ 31 tok/s           │     │      Qwen3-4B (Budget 100)      │
+│      http://localhost:8080/v1       │     │   100% recall, 42% savings      │
 └───────────────┬─────────────────────┘     └──────────────┬──────────────────┘
                 │                                          │
                 │ OpenAI API                               │ Polls JSONL
@@ -32,8 +32,9 @@ This is a textbook-perfect use case for Apple Neural Engine:
 | **Power efficient** | Background task running continuously - battery matters |
 | **Parallel to GPU** | Main model on GPU, compression on ANE - no contention |
 | **Not latency-critical** | ~15 sec/turn is fine - user is typing during compression |
-| **Small models** | Qwen3-1.7B fits perfectly on ANE's memory |
-| **Predictable workload** | Same model, similar prompts - ANE loves consistency |
+| **Small models** | Qwen3-4B fits perfectly on ANE's memory (26-min cold start amortized) |
+| **Predictable workload** | Same model, Budget 100 prompt - ANE loves consistency |
+| **Perfect recall** | 4B + Budget 100 achieves 100% recall vs 1.7B's 90-97% |
 
 **The key insight:** ANE is weak for interactive chat (latency matters) but strong for background inference where throughput and power efficiency matter more than speed.
 
@@ -42,6 +43,60 @@ This creates an **inference co-processor** pattern:
 - **ANE:** Efficient, background (housekeeping)
 
 This is the kind of heterogeneous compute Apple Silicon was designed for.
+
+## 🎯 Production Configuration ✅ DEPLOYED
+
+**Status**: ✅ **LIVE IN PRODUCTION** (deployed 2026-11-06 19:53 UTC)
+**Daemon**: Running (PID 1225)
+**Metrics**: http://127.0.0.1:8766/metrics
+
+**After comprehensive multi-seed validation, the optimal configuration for ANE fact extraction is:**
+
+### Recommended Setup
+
+| Component | Configuration | Performance |
+|-----------|---------------|-------------|
+| **Model** | Qwen3 4B (qwen3-4b-ctx2048) | 100% recall, ~42% token savings |
+| **Extraction Strategy** | Budget 100 per-turn | Validated across 3 seeds (101, 202, 303) |
+| **Alternative** | Qwen3 1.7B | ❌ NOT RECOMMENDED (90-97% recall) |
+
+### Key Finding: Budget 100 Wins
+
+**Budget constraint optimization beats chunk-size optimization:**
+
+- ✅ **100% perfect recall** across all tested seeds (3/3)
+- ✅ **~42% token savings** vs unconstrained baseline
+- ✅ **Simpler implementation** - no chunking logic needed
+- ✅ **More reliable** - 0% failure rate vs 33% for chunk-size variants
+
+**Production Prompt:**
+```python
+prompt = f"""Extract facts from this conversation turn. Target ≤100 tokens.
+Be concise but clear. Abbreviate where unambiguous.
+Preserve: numbers, percentages, file paths, specific names, measurements.
+
+Turn:
+{turn_text}
+
+Facts (≤100 tokens):"""
+
+max_tokens = 120  # 20% buffer
+temperature = 0.0
+```
+
+**Monitoring Commands:**
+```bash
+# Check daemon status
+./anectl status
+
+# View live metrics
+curl -s http://127.0.0.1:8766/metrics | jq '{model, configuration, compression_ratio, avg_extraction_tokens, budget_outlier_rate}'
+
+# Monitor logs
+tail -f ~/.nanobot/logs/ane_daemon.log
+```
+
+**See [arms/README.md](arms/README.md) and [arms/arm_d/BUDGET_100_VALIDATION.md](arms/arm_d/BUDGET_100_VALIDATION.md) for complete validation results.**
 
 ## Processing Pipeline
 

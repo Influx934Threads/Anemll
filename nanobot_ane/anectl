@@ -17,7 +17,7 @@ LOG_FILE="$HOME/.nanobot/logs/ane_daemon.log"
 VENV_PATH="$HOME/Build/Anemll/env-anemll"
 
 # Default settings
-MODEL_PATH="$HOME/Build/Anemll/models/qwen3-1.7b-ctx2048"
+MODEL_PATH="$HOME/Build/Anemll/models/qwen3-4b-ctx2048"
 WS_URL="ws://127.0.0.1:8765"
 
 # Colors

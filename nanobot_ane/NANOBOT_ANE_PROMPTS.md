@@ -21,36 +21,24 @@ The mechanical merge uses CPU-side fuzzy deduplication (85% similarity threshold
 
 ## Fact Extraction Prompt
 
-Extracts structured facts from conversation turns for incremental compression.
+**Budget 100 Configuration (Validated 2026-11-06)**
 
-**Supported Fact Types:**
-- `requirement`: User specifications, thresholds, limits, constraints
-- `configuration`: Settings, parameters, options configured
-- `schedule`: Timing details, frequencies, time windows, cron patterns
-- `threshold`: Numeric limits, percentages, boundaries
-- `decision`: Choices made, directions taken
-- `preference`: User likes/dislikes, preferred approaches
-- `context`: Background information, project details
-- `task`: Work to be done, actions planned
-- `result`: Outcomes, files created, commands executed
-- `tool`: Specific tools/commands with parameters
-- `location`: File paths, directories, URLs
+This prompt uses the Budget 100 configuration validated across 3 seeds:
+- ✅ 100% perfect recall (seeds 101, 202, 303)
+- ✅ ~42% token savings vs unconstrained baseline
+- ✅ Simpler than chunk-size optimization (no windowing needed)
+
+**Key principle:** Tight budget constraint (≤100 tokens) forces disciplined extraction while maintaining perfect recall. Natural language output (not JSON) reduces hallucinations and parsing errors.
 
 ```
-Extract key facts from this conversation turn. Focus on preserving SPECIFIC DETAILS like:
-- Numeric thresholds (percentages, counts, sizes)
-- Timing/schedule details (times, frequencies, durations)
-- Tool names and their specific parameters
-- File paths and locations
-- Requirements and constraints
-
-Output as JSON array of facts, each with "type" and "content".
-Types: requirement, configuration, schedule, threshold, decision, preference, context, task, result, tool, location
+Extract facts from this conversation turn. Target ≤100 tokens.
+Be concise but clear. Abbreviate where unambiguous.
+Preserve: numbers, percentages, file paths, specific names, measurements.
 
 Turn:
 {turn_text}
 
-Facts (JSON array):
+Facts (≤100 tokens):
 ```
 
 ---

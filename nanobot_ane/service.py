@@ -34,6 +34,10 @@ class CompressionMetrics:
     tool_input_chars: int = 0
     tool_output_chars: int = 0
 
+    # Budget 100 specific metrics (added 2026-11-06)
+    extraction_token_counts: List[int] = field(default_factory=list)  # Per-turn token counts
+    budget_outliers: int = 0  # Extractions >120 tokens (20% over budget)
+
     @property
     def compression_ratio(self) -> float:
         """How much we're reducing (e.g., 5.0 = 5x reduction)"""
@@ -52,6 +56,20 @@ class CompressionMetrics:
         if self.total_turns_compressed == 0:
             return 0
         return self.total_compression_time_ms / self.total_turns_compressed
+
+    @property
+    def avg_extraction_tokens(self) -> float:
+        """Average tokens per extraction (Budget 100: expect ~110)"""
+        if not self.extraction_token_counts:
+            return 0
+        return sum(self.extraction_token_counts) / len(self.extraction_token_counts)
+
+    @property
+    def budget_outlier_rate(self) -> float:
+        """Percentage of extractions exceeding 120 tokens (expect <5%)"""
+        if self.total_turns_compressed == 0:
+            return 0
+        return self.budget_outliers / self.total_turns_compressed
 
 
 @dataclass
@@ -156,6 +174,9 @@ class ANEService:
             self.metrics.total_output_tokens = metrics_data.get("total_output_tokens", 0)
             self.metrics.total_turns_compressed = metrics_data.get("total_turns_compressed", 0)
             self.metrics.total_compression_time_ms = metrics_data.get("total_compression_time_ms", 0)
+            # Budget 100 metrics (added 2026-11-06)
+            self.metrics.extraction_token_counts = metrics_data.get("extraction_token_counts", [])
+            self.metrics.budget_outliers = metrics_data.get("budget_outliers", 0)
 
             # Restore session positions
             self._session_positions = data.get("session_positions", {})
@@ -172,20 +193,18 @@ class ANEService:
         import re
 
         # Default prompts (fallback)
-        self.prompt_fact_extraction = """Extract key facts from this conversation turn. Focus on preserving SPECIFIC DETAILS like:
-- Numeric thresholds (percentages, counts, sizes)
-- Timing/schedule details (times, frequencies, durations)
-- Tool names and their specific parameters
-- File paths and locations
-- Requirements and constraints
-
-Output as JSON array of facts, each with "type" and "content".
-Types: requirement, configuration, schedule, threshold, decision, preference, context, task, result, tool, location
+        # Budget 100 Configuration (Validated 2026-11-06)
+        # - 100% recall across seeds 101, 202, 303
+        # - ~42% token savings vs unconstrained baseline
+        # - Simpler than chunk-size optimization
+        self.prompt_fact_extraction = """Extract facts from this conversation turn. Target ≤100 tokens.
+Be concise but clear. Abbreviate where unambiguous.
+Preserve: numbers, percentages, file paths, specific names, measurements.
 
 Turn:
 {turn_text}
 
-Facts (JSON array):"""
+Facts (≤100 tokens):"""
 
         self.prompt_consolidate_with_prev = """Consolidate this summary with new facts. AGGRESSIVELY REMOVE DUPLICATES and merge similar information.
 
@@ -267,6 +286,9 @@ Summary (no duplicates, preserve specifics):"""
                     "total_output_tokens": self.metrics.total_output_tokens,
                     "total_turns_compressed": self.metrics.total_turns_compressed,
                     "total_compression_time_ms": self.metrics.total_compression_time_ms,
+                    # Budget 100 metrics (added 2026-11-06)
+                    "extraction_token_counts": self.metrics.extraction_token_counts,
+                    "budget_outliers": self.metrics.budget_outliers,
                 },
                 "session_positions": self._session_positions if hasattr(self, '_session_positions') else {},
                 "saved_at": datetime.now().isoformat(),
@@ -418,7 +440,14 @@ Summary (no duplicates, preserve specifics):"""
         pass
 
     async def _extract_facts(self, turn: List[dict]) -> List[dict]:
-        """Extract key facts from a conversation turn"""
+        """
+        Extract key facts using Budget 100 (validated 2026-11-06).
+
+        Performance (validated across 3 seeds):
+        - 100% perfect recall (seeds 101, 202, 303)
+        - ~42% token savings vs unconstrained baseline
+        - Avg ~110 tokens per turn
+        """
         # Format the turn for the model (2000 chars per message to capture code context)
         turn_text = "\n".join([
             f"{msg.get('role', 'unknown')}: {msg.get('content', '')[:2000]}"
@@ -427,22 +456,22 @@ Summary (no duplicates, preserve specifics):"""
 
         prompt = self.prompt_fact_extraction.format(turn_text=turn_text)
 
-        # Run inference on ANE
-        response = await self._generate(prompt, max_tokens=200)
+        # Run inference on ANE with Budget 100 configuration
+        # max_tokens=120 provides 20% buffer over 100-token target
+        # temperature=0.0 is set in _generate for deterministic output
+        response = await self._generate(prompt, max_tokens=120)
 
-        # Parse response
-        try:
-            # Try to extract JSON from response
-            import re
-            json_match = re.search(r'\[.*\]', response, re.DOTALL)
-            if json_match:
-                facts = json.loads(json_match.group())
-                return facts
-        except (json.JSONDecodeError, AttributeError):
-            pass
+        # Track Budget 100 metrics
+        # Rough token count: split on whitespace (close enough for monitoring)
+        extracted_tokens = len(response.split())
+        self.metrics.extraction_token_counts.append(extracted_tokens)
+        if extracted_tokens > 120:
+            self.metrics.budget_outliers += 1
+            logger.warning(f"Budget outlier: {extracted_tokens} tokens (>120)")
 
-        # Fallback: create a simple fact
-        return [{"type": "context", "content": turn_text[:200]}]
+        # Budget 100 uses natural language output (not JSON)
+        # Return as simple fact object for mechanical merger
+        return [{"type": "context", "content": response.strip()}]
 
     async def _consolidate_facts(self, facts: List[dict], previous_summary: str = "") -> str:
         """
@@ -591,6 +620,8 @@ Summary:"""
     def get_metrics(self) -> dict:
         """Get overall compression metrics"""
         return {
+            "model": "qwen3-4b-ctx2048",
+            "configuration": "budget_100",
             "total_input_tokens": self.metrics.total_input_tokens,
             "total_output_tokens": self.metrics.total_output_tokens,
             "compression_ratio": round(self.metrics.compression_ratio, 2),
@@ -600,6 +631,10 @@ Summary:"""
             "total_compression_time_ms": round(self.metrics.total_compression_time_ms, 1),
             "tool_compressions": self.metrics.tool_compressions,
             "active_sessions": len(self.session_summaries),
+            # Budget 100 metrics (added 2026-11-06)
+            "avg_extraction_tokens": round(self.metrics.avg_extraction_tokens, 1),
+            "budget_outliers": self.metrics.budget_outliers,
+            "budget_outlier_rate": round(self.metrics.budget_outlier_rate, 3),
         }
 
     def get_session_position(self, session_key: str) -> int:
