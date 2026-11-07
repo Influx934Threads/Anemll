@@ -1,0 +1,73 @@
+{
+  "model": "qwen3-4b-ctx2048",
+  "seed": 101,
+  "num_turns": 48,
+  "planted_facts_count": 32,
+  "planted_facts": [
+    "PlantedFact(status: 'build status: passed' @ turn 2)",
+    "PlantedFact(file_path: '~/.config/nanobot/settings_101.yaml' @ turn 3)",
+    "PlantedFact(model: 'qwen3-8b-v2.0' @ turn 4)",
+    "PlantedFact(status: 'build status: pending' @ turn 5)",
+    "PlantedFact(decision: 'user chose option B' @ turn 6)",
+    "PlantedFact(config: 'timeout=53s' @ turn 7)",
+    "PlantedFact(measurement: 'throughput: 440 req/s' @ turn 10)",
+    "PlantedFact(measurement: 'throughput: 54 req/s' @ turn 11)",
+    "PlantedFact(error: 'ConnectionError: connection refused (errno 40)' @ turn 12)",
+    "PlantedFact(measurement: 'throughput: 486 req/s' @ turn 13)",
+    "PlantedFact(decision: 'user enabled caching' @ turn 14)",
+    "PlantedFact(file_path: '/usr/local/bin/nanobot_v2.3_101' @ turn 15)",
+    "PlantedFact(config: 'max_retries=49' @ turn 16)",
+    "PlantedFact(model: 'bonsai-1.7b-pq2' @ turn 17)",
+    "PlantedFact(decision: 'user chose option A' @ turn 18)",
+    "PlantedFact(decision: 'user chose option A' @ turn 21)",
+    "PlantedFact(measurement: 'throughput: 297 req/s' @ turn 22)",
+    "PlantedFact(decision: 'user enabled logging' @ turn 23)",
+    "PlantedFact(model: 'qwen3-8b-v1.9' @ turn 24)",
+    "PlantedFact(error: 'ConnectionError: connection refused (errno 64)' @ turn 28)",
+    "PlantedFact(file_path: '~/.config/nanobot/settings_101.yaml' @ turn 29)",
+    "PlantedFact(status: 'build status: pending' @ turn 30)",
+    "PlantedFact(model: 'bonsai-8b-pq2' @ turn 31)",
+    "PlantedFact(error: 'RuntimeError: invalid state at step 2' @ turn 32)",
+    "PlantedFact(decision: 'user enabled caching' @ turn 33)",
+    "PlantedFact(config: 'max_retries=107' @ turn 34)",
+    "PlantedFact(measurement: 'latency: 1565ms' @ turn 35)",
+    "PlantedFact(config: 'timeout=24s' @ turn 37)",
+    "PlantedFact(status: 'build status: failed' @ turn 38)",
+    "PlantedFact(config: 'max_retries=26' @ turn 39)",
+    "PlantedFact(config: 'timeout=78s' @ turn 40)",
+    "PlantedFact(status: 'build status: passed' @ turn 46)"
+  ],
+  "results": [
+    {
+      "budget": "none",
+      "total_tokens": 9010,
+      "avg_per_turn": 187.70833333333334,
+      "recall_found": 32,
+      "recall_total": 32,
+      "recall_percentage": 100.0,
+      "missed_facts": []
+    },
+    {
+      "budget": "100",
+      "total_tokens": 5393,
+      "avg_per_turn": 112.35416666666667,
+      "recall_found": 32,
+      "recall_total": 32,
+      "recall_percentage": 100.0,
+      "missed_facts": []
+    },
+    {
+      "budget": "150",
+      "total_tokens": 8300,
+      "avg_per_turn": 172.91666666666666,
+      "recall_found": 29,
+      "recall_total": 32,
+      "recall_percentage": 90.625,
+      "missed_facts": [
+        "PlantedFact(decision: 'user chose option B' @ turn 6)",
+        "PlantedFact(decision: 'user chose option A' @ turn 18)",
+        "PlantedFact(decision: 'user chose option A' @ turn 21)"
+      ]
+    }
+  ]
+}
