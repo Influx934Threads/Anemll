@@ -11,9 +11,9 @@
 
 | Document | GitHub URL | Description |
 |----------|-----------|-------------|
-| **Executive Summary** | [EXECUTIVE_SUMMARY.md](https://github.com/Influx934Threads/Anemll/blob/main/nanobot_ane/arms/Anemll/nanobot_ane/EXECUTIVE_SUMMARY.md) | One-page overview: validation, deployment status, key findings |
+| **Executive Summary** | [EXECUTIVE_SUMMARY.md](https://github.com/Influx934Threads/Anemll/blob/main/nanobot_ane/EXECUTIVE_SUMMARY.md) | One-page overview: validation, deployment status, key findings |
 | **Cross-Pollination** | [CROSS_POLLINATION_AMD_NPU.md](https://github.com/Influx934Threads/Anemll/blob/main/nanobot_ane/arms/CROSS_POLLINATION_AMD_NPU.md) | Direct AMD NPU comparison, Budget 100 breakthrough, **recommendation for AMD team** |
-| **Transferable Findings** | [TRANSFERABLE_FINDINGS.md](https://github.com/Influx934Threads/Anemll/blob/main/nanobot_ane/arms/Anemll/nanobot_ane/TRANSFERABLE_FINDINGS.md) | Platform-agnostic optimization principles (applies to ANY NPU) |
+| **Transferable Findings** | [TRANSFERABLE_FINDINGS.md](https://github.com/Influx934Threads/Anemll/blob/main/nanobot_ane/TRANSFERABLE_FINDINGS.md) | Platform-agnostic optimization principles (applies to ANY NPU) |
 
 ---
 

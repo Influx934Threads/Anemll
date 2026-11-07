@@ -1,0 +1,74 @@
+{
+  "model": "qwen3-4b-ctx2048",
+  "seed": 202,
+  "num_turns": 48,
+  "planted_facts_count": 32,
+  "planted_facts": [
+    "PlantedFact(file_path: '/usr/local/bin/nanobot_v2.2_202' @ turn 1)",
+    "PlantedFact(model: 'qwen3-8b-v2.2' @ turn 2)",
+    "PlantedFact(decision: 'user enabled telemetry' @ turn 3)",
+    "PlantedFact(measurement: 'throughput: 461 req/s' @ turn 4)",
+    "PlantedFact(config: 'max_retries=62' @ turn 6)",
+    "PlantedFact(version: 'version 3.8.14' @ turn 10)",
+    "PlantedFact(model: 'qwen3-1.7b-v3.8' @ turn 12)",
+    "PlantedFact(config: 'max_retries=114' @ turn 13)",
+    "PlantedFact(file_path: '/usr/local/bin/nanobot_v1.9_202' @ turn 14)",
+    "PlantedFact(config: 'timeout=98s' @ turn 15)",
+    "PlantedFact(error: 'RuntimeError: invalid state at step 2' @ turn 16)",
+    "PlantedFact(config: 'max_retries=63' @ turn 19)",
+    "PlantedFact(error: 'ConnectionError: connection refused (errno 12)' @ turn 20)",
+    "PlantedFact(decision: 'user enabled telemetry' @ turn 24)",
+    "PlantedFact(file_path: '~/.config/nanobot/settings_202.yaml' @ turn 25)",
+    "PlantedFact(decision: 'user chose option A' @ turn 26)",
+    "PlantedFact(decision: 'user chose option C' @ turn 27)",
+    "PlantedFact(config: 'max_retries=84' @ turn 28)",
+    "PlantedFact(file_path: '/usr/local/bin/nanobot_v1.9_202' @ turn 30)",
+    "PlantedFact(decision: 'user chose option B' @ turn 31)",
+    "PlantedFact(model: 'qwen3-1.7b-v2.9' @ turn 32)",
+    "PlantedFact(model: 'qwen3-8b-v1.8' @ turn 33)",
+    "PlantedFact(decision: 'user chose option B' @ turn 34)",
+    "PlantedFact(decision: 'user enabled caching' @ turn 35)",
+    "PlantedFact(model: 'qwen3-3b-v3.6' @ turn 38)",
+    "PlantedFact(status: 'build status: failed' @ turn 39)",
+    "PlantedFact(error: 'RuntimeError: invalid state at step 10' @ turn 41)",
+    "PlantedFact(measurement: 'latency: 606ms' @ turn 42)",
+    "PlantedFact(measurement: 'throughput: 443 req/s' @ turn 43)",
+    "PlantedFact(config: 'max_retries=71' @ turn 45)",
+    "PlantedFact(status: 'build status: pending' @ turn 46)",
+    "PlantedFact(decision: 'user enabled caching' @ turn 47)"
+  ],
+  "results": [
+    {
+      "budget": "none",
+      "total_tokens": 8802,
+      "avg_per_turn": 183.375,
+      "recall_found": 32,
+      "recall_total": 32,
+      "recall_percentage": 100.0,
+      "missed_facts": []
+    },
+    {
+      "budget": "100",
+      "total_tokens": 5314,
+      "avg_per_turn": 110.70833333333333,
+      "recall_found": 32,
+      "recall_total": 32,
+      "recall_percentage": 100.0,
+      "missed_facts": []
+    },
+    {
+      "budget": "150",
+      "total_tokens": 8058,
+      "avg_per_turn": 167.875,
+      "recall_found": 28,
+      "recall_total": 32,
+      "recall_percentage": 87.5,
+      "missed_facts": [
+        "PlantedFact(decision: 'user chose option A' @ turn 26)",
+        "PlantedFact(decision: 'user chose option C' @ turn 27)",
+        "PlantedFact(decision: 'user chose option B' @ turn 31)",
+        "PlantedFact(decision: 'user chose option B' @ turn 34)"
+      ]
+    }
+  ]
+}
