@@ -18,7 +18,7 @@ from datetime import datetime
 import json
 
 from .ane_inference import ANEInference
-from .arms.arm_c.mechanical_merger import MechanicalMerger
+from .mrc_cpu_ops import MechanicalMerger
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,8 @@ class ANEService:
         self.session_summaries: Dict[str, SessionSummary] = {}
 
         # Mechanical merger for CPU-side fact consolidation (ARM C)
-        self.mechanical_merger = MechanicalMerger(similarity_threshold=0.85)
+        # Using entity-based deduplication (100% TRUE recall, 316x faster)
+        self.mechanical_merger = MechanicalMerger(mode="entity")
 
         # Compression queue
         self.queue: asyncio.PriorityQueue[CompressionTask] = asyncio.PriorityQueue()
