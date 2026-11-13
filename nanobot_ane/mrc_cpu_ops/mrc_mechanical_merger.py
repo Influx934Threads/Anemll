@@ -197,7 +197,7 @@ class MechanicalMerger:
 
 class EntityDeduplicator:
     """
-    Entity-aware deduplication using Jaccard similarity
+    Entity-aware deduplication using Jaccard similarity with string fallback
 
     More sophisticated than simple string matching - uses entity extraction.
 
@@ -210,8 +210,9 @@ class EntityDeduplicator:
     Algorithm:
     1. Extract entities (numbers, capitalized words, units) from each fact
     2. Compare entity sets using Jaccard similarity (overlap / union)
-    3. If Jaccard > 50%, consider duplicate
-    4. Preserve first occurrence (temporal priority)
+    3. **HYBRID FALLBACK**: If both have 0 entities OR sparse entities, use string similarity
+    4. If Jaccard > 50% (or string similarity > 85%), consider duplicate
+    5. Preserve first occurrence (temporal priority)
 
     Example:
         "timeout: 30s" → entities: {'30'}
@@ -220,19 +221,35 @@ class EntityDeduplicator:
 
         "timeout set to 30s" → entities: {'30'}
         Jaccard with first = 1/1 = 100% → Merge ✓ (same value)
+
+    Fallback Example (prose with no entities):
+        "prefers concise" → entities: set()
+        "prefers concise" → entities: set()
+        Fallback to string: 100% → Merge ✓
     """
 
-    def __init__(self, jaccard_threshold: float = 0.5):
+    def __init__(self, jaccard_threshold: float = 0.5, string_threshold: float = 0.7,
+                 enable_fallback: bool = True, sparse_entity_max: int = 4):
         """
         Args:
             jaccard_threshold: Minimum Jaccard similarity to consider duplicates (default: 0.5)
+            string_threshold: String similarity threshold for sparse entity fallback (default: 0.7)
+                              Tuned from AMD NPU findings on real production data (8/8 recall)
+            enable_fallback: Enable string similarity fallback for sparse/empty entities (default: True)
+            sparse_entity_max: Max union size to trigger fallback check (default: 4)
+                              Based on AMD NPU finding: union=4 can still have weak coincidental entities
+                              (e.g., "User"+"Assistant" shared, but different numeric values)
         """
         self.jaccard_threshold = jaccard_threshold
+        self.string_threshold = string_threshold
+        self.enable_fallback = enable_fallback
+        self.sparse_entity_max = sparse_entity_max
         self.entity_pattern = re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|\d+(?:\.\d+)?(?:\s*(?:ms|sec|MB|KB|GB)))\b')
 
     def deduplicate(self, facts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Deduplicate based on extracted entities using Jaccard similarity
+        with string similarity fallback for sparse/empty entities
 
         Returns:
             List of unique facts (duplicates removed, first occurrence preserved)
@@ -247,20 +264,74 @@ class EntityDeduplicator:
 
             # Check if this entity set overlaps significantly with any seen set
             is_duplicate = False
-            for seen_entities in seen_entity_sets:
+            for idx, seen_entities in enumerate(seen_entity_sets):
                 overlap = len(entities & seen_entities)
                 union = len(entities | seen_entities)
 
-                # Jaccard similarity = overlap / union
-                if union > 0 and overlap / union >= self.jaccard_threshold:
-                    is_duplicate = True
-                    break
+                # Case 1: Both have entities - use Jaccard similarity
+                if union > 0:
+                    jaccard = overlap / union
+                    if jaccard >= self.jaccard_threshold:
+                        # Sparse entity guard (AMD NPU finding):
+                        # When union is small (≤sparse_entity_max), weak coincidental entities
+                        # can push Jaccard over threshold even for unrelated facts.
+                        # Example: {"User", "Assistant", num1, num2} → 4 entities
+                        #          Shared: {"User", "Assistant"} → 2/4 = 50% Jaccard
+                        #          But different num values (num1 ≠ num2) → should NOT merge
+                        # Solution: Require string-similarity confirmation for ALL sparse unions
+                        # Key insight: Small union = high risk of coincidental overlap
+                        if self.enable_fallback and union <= self.sparse_entity_max:
+                            # Verify with string similarity for sparse entity sets
+                            seen_content = unique[idx].get('content', '')
+                            string_sim = self._string_similarity(content, seen_content)
+                            if string_sim >= self.string_threshold:
+                                is_duplicate = True
+                                break
+                            # else: Jaccard high but string similarity low → keep separate
+                        else:
+                            # Rich entity set (>sparse_entity_max), trust Jaccard
+                            is_duplicate = True
+                            break
+
+                # Case 2: Both have 0 entities - fallback to string similarity
+                elif union == 0 and self.enable_fallback:
+                    seen_content = unique[idx].get('content', '')
+                    string_sim = self._string_similarity(content, seen_content)
+                    if string_sim >= self.string_threshold:
+                        is_duplicate = True
+                        break
 
             if not is_duplicate:
                 unique.append(fact)
                 seen_entity_sets.append(entities)
 
         return unique
+
+    def _string_similarity(self, text1: str, text2: str) -> float:
+        """
+        Compute string similarity using SequenceMatcher
+
+        Returns:
+            Similarity ratio (0.0 to 1.0)
+        """
+        from difflib import SequenceMatcher
+        return SequenceMatcher(None, text1.lower(), text2.lower()).ratio()
+
+    def _has_only_generic_entities(self, entity_set: set) -> bool:
+        """
+        Check if all entities are generic words (not numbers)
+
+        Returns True if all entities are non-numeric (e.g., 'User', 'System')
+        Returns False if any entity is a number (e.g., '30', '100')
+
+        Numbers are good discriminators: timeout 30s ≠ timeout 60s
+        Generic words need verification: User prefers X vs User likes Y
+        """
+        for entity in entity_set:
+            # Check if entity is numeric or contains digits
+            if re.search(r'\d', str(entity)):
+                return False  # Contains number, not generic
+        return True  # All entities are generic words
 
     def _extract_entities(self, text: str) -> set:
         """Extract entities from text (simple heuristic)"""
